@@ -115,6 +115,7 @@ HID_BPF_CONFIG(
 #define VENDOR_DESCRIPTOR_LENGTH 36
 #define PAD_REPORT_ID 6
 #define RAW_PAD_REPORT_ID 0xf0
+#define RAW_BATTERY_REPORT_ID 0xf2
 #define VENDOR_REPORT_ID 2
 #define PAD_REPORT_LENGTH 8
 #define VENDOR_REPORT_LENGTH 12
@@ -176,6 +177,38 @@ static const __u8 fixed_rdesc_vendor[] = {
 			ReportCount(1)
 			ReportSize(8)
 			Input(Var|Rel)
+		)
+		// -- Byte 0 in report
+		ReportId(RAW_BATTERY_REPORT_ID)
+		// Byte 1 in report - same than report ID
+		ReportCount(1)
+		ReportSize(8)
+		Input(Const) // padding (internal report ID)
+		// Byte 2 in report - always 0x01
+		Input(Const) // padding (internal report ID)
+		UsagePage_Digitizers
+		/*
+		 * We represent the device as a stylus to force the kernel to not
+		 * directly query its battery state. Instead the kernel will rely
+		 * only on the provided events.
+		 */
+		Usage_Dig_Stylus
+		CollectionPhysical(
+			// Byte 3 in report - battery value
+			UsagePage_BatterySystem
+			Usage_BS_AbsoluteStateOfCharge
+			LogicalMinimum_i8(0)
+			LogicalMaximum_i8(100)
+			ReportCount(1)
+			ReportSize(8)
+			Input(Var|Abs)
+			// Byte 4 in report - charging state
+			Usage_BS_Charging
+			LogicalMinimum_i8(0)
+			LogicalMaximum_i8(1)
+			ReportCount(1)
+			ReportSize(8)
+			Input(Var|Abs)
 		)
 	)
 };
@@ -249,6 +282,9 @@ int BPF_PROG(ack05_fix_events, struct hid_bpf_ctx *hctx)
 		if (data[7] == 0x02)
 			data[7] = 0xff;
 		ret = 8;
+	} else if (data[1] == RAW_BATTERY_REPORT_ID) {
+		data[0] = data[1];
+		ret = 5;
 	}
 
 	return ret;
