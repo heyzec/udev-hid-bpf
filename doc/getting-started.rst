@@ -23,10 +23,15 @@ using a standard `meson <https://mesonbuild.com/>`_ build process::
 
    $ git clone https://gitlab.freedesktop.org/libevdev/udev-hid-bpf.git
    $ cd udev-hid-bpf/
-   $ meson setup builddir
+   $ meson setup builddir -Dbpfs=testing,stable,userhacks
    $ meson compile -C builddir
 
 The above ``meson`` commands will build the tool and any BPF programs it finds in ``src/bpf/*.bpf.c``.
+
+.. note:: Typically users would rely on the distribution to ship the ``stable`` set of
+          BPFs. By default ``udev-hid-bpf`` builds only the ``testing`` and
+          ``userhacks`` section. See :ref:`stable_testing_userhacks` for details.
+
 Please see the `meson documentation <https://mesonbuild.com/>`_ for more details on invoking ``meson``.
 
 .. _installation:
