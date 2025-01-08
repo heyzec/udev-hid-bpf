@@ -92,7 +92,8 @@ def to_kernel_tree(repos):
         [
             b
             for b in (tree / "src/bpf").traverse()
-            if b.name.endswith(".h") and b.name not in ["attach.h", "vmlinux.h"]
+            if b.name.endswith(".h")
+            and b.name not in ["attach.h", "vmlinux.h", "uhid-bpf-test-wrappers.h"]
         ]
     )
 
