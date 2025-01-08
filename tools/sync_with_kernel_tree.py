@@ -124,7 +124,11 @@ def to_kernel_tree(repos):
 
             for sha in hist:
                 commit = repos.udev_hid_bpf.commit(sha)
-                obj = commit.tree / blob.path
+                try:
+                    obj = commit.tree / blob.path
+                except KeyError:
+                    # the file doesn't exist in this sha, but will be in the future
+                    continue
 
                 u = obj.data_stream.read().decode("utf-8").splitlines(keepends=True)
 
