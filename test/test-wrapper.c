@@ -27,6 +27,10 @@ void set_callbacks(struct test_callbacks *cb)
 
 uint8_t* hid_bpf_get_data(struct hid_bpf_ctx *ctx, unsigned int offset, size_t sz)
 {
+	/* we are not relying on ctx->allocated_size because the
+	 * value might be overwritten by the bpf program (though
+	 * arguably the value is read only in the kernel)
+	 */
 	if (offset + sz <= callbacks.hid_bpf_data_sz)
 		return callbacks.hid_bpf_data + offset;
 	else

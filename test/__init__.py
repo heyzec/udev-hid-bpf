@@ -36,12 +36,20 @@ class HidProbeArgs(ctypes.Structure):
 
 
 # see struct hid_bpf_ctx
-class HidBpfCtx(ctypes.Structure):
-    __fields__ = [
+class TracingHidBpfCtx(ctypes.Structure):
+    _fields_ = [
         ("index", c_uint32),
         ("hid", c_void_p),
         ("allocated_size", c_uint32),
         ("report_type", c_int),
+        ("retval_or_size", c_int32),
+    ]
+
+
+class StructOpsHidBpfCtx(ctypes.Structure):
+    _fields_ = [
+        ("hid", c_void_p),
+        ("allocated_size", c_uint32),
         ("retval_or_size", c_int32),
     ]
 
@@ -142,20 +150,26 @@ class Bpf:
             # Only one entry per json file so we're good
             js = json.load(open(jsonfile))[0]
             for program in js["programs"]:
+
+                def register_fun(generic_name):
+                    func = getattr(lib, program["name"])
+                    func.struct_ops = program["section"].startswith("struct_ops")
+                    func.argtypes = (
+                        (ctypes.POINTER(StructOpsHidBpfCtx),)
+                        if func.struct_ops
+                        else (ctypes.POINTER(TracingHidBpfCtx),)
+                    )
+                    func.restype = c_int
+                    setattr(lib, generic_name, func)
+
                 if program["section"].endswith("/hid_bpf_rdesc_fixup") or program[
                     "section"
                 ].endswith("/hid_rdesc_fixup"):
-                    func = getattr(lib, program["name"])
-                    func.argtypes = (ctypes.POINTER(HidBpfCtx),)
-                    func.restype = c_int
-                    setattr(lib, "_hid_bpf_rdesc_fixup", func)
+                    register_fun("_hid_bpf_rdesc_fixup")
                 elif program["section"].endswith("/hid_bpf_device_event") or program[
                     "section"
                 ].endswith("/hid_device_event"):
-                    func = getattr(lib, program["name"])
-                    func.argtypes = (ctypes.POINTER(HidBpfCtx),)
-                    func.restype = c_int
-                    setattr(lib, "_hid_bpf_device_event", func)
+                    register_fun("_hid_bpf_device_event")
         except OSError as e:
             pytest.exit(
                 f"Error loading the JSON file: {e}. Unexpected LD_LIBRARY_PATH?"
@@ -202,7 +216,7 @@ class Bpf:
     def hid_bpf_device_event(
         self,
         report: bytes | None = None,
-        ctx: HidBpfCtx | None = None,
+        ctx: TracingHidBpfCtx | StructOpsHidBpfCtx | None = None,
     ) -> None | bytes:
         """
         Call the BPF program's hid_bpf_device_event function.
@@ -211,13 +225,20 @@ class Bpf:
         Otherwise it returns None.
         """
         if ctx is None:
-            ctx = HidBpfCtx()
+            ctx = (
+                StructOpsHidBpfCtx()
+                if self.lib._hid_bpf_device_event.struct_ops
+                else TracingHidBpfCtx()
+            )
 
         if report is not None:
-            data = (ctypes.c_uint8 * len(report))(*report)
+            allocated_size = int(len(report) / 64 + 1) * 64
+            data = (ctypes.c_uint8 * allocated_size)(*report)
             callbacks = Callbacks()
             callbacks.hid_bpf_data = data
-            callbacks.hid_bpf_data_sz = len(report)
+            callbacks.hid_bpf_data_sz = allocated_size
+            ctx.allocated_size = allocated_size
+            ctx.retval_or_size = len(report)
             self.set_callbacks(callbacks)
         else:
             data = None
@@ -226,15 +247,18 @@ class Bpf:
         if rc < 0:
             raise OSError(-rc)
 
+        if rc > 0:
+            ctx.retval_or_size = rc
+
         if report is None:
             return None
         assert data is not None
-        return bytes(data)
+        return bytes(data[: ctx.retval_or_size])
 
     def hid_bpf_rdesc_fixup(
         self,
         rdesc: bytes | None = None,
-        ctx: HidBpfCtx | None = None,
+        ctx: TracingHidBpfCtx | StructOpsHidBpfCtx | None = None,
     ) -> None | bytes:
         """
         Call the BPF program's hid_bpf_rdesc_fixup function.
@@ -243,22 +267,32 @@ class Bpf:
         Otherwise it returns None.
         """
         if ctx is None:
-            ctx = HidBpfCtx()
+            ctx = (
+                StructOpsHidBpfCtx()
+                if self.lib._hid_bpf_rdesc_fixup.struct_ops
+                else TracingHidBpfCtx()
+            )
 
         if rdesc is not None:
-            data = (ctypes.c_uint8 * 4096)(*rdesc)
+            allocated_size = 4096
+            data = (ctypes.c_uint8 * allocated_size)(*rdesc)
             callbacks = Callbacks()
             callbacks.hid_bpf_data = data
-            callbacks.hid_bpf_data_sz = len(data)
+            callbacks.hid_bpf_data_sz = allocated_size
+            ctx.allocated_size = allocated_size
+            ctx.retval_or_size = len(rdesc)
             self.set_callbacks(callbacks)
         else:
             data = None
 
         rc = self.lib._hid_bpf_rdesc_fixup(ctypes.byref(ctx))
-        if rc != 0:
+        if rc < 0:
             raise OSError(rc)
+
+        if rc > 0:
+            ctx.retval_or_size = rc
 
         if rdesc is None:
             return None
         assert data is not None
-        return bytes(data)
+        return bytes(data[: ctx.retval_or_size])
