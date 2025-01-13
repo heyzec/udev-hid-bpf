@@ -69,6 +69,7 @@ class Api:
     name: str
     args: Tuple[Type[ctypes._SimpleCData | ctypes._Pointer], ...]
     return_type: Optional[Type[ctypes._SimpleCData | ctypes._Pointer]]
+    optional: bool
 
     @property
     def basename(self) -> str:
@@ -80,8 +81,18 @@ class Bpf:
     _libs: dict[str, "Bpf"] = {}
 
     _api_prototypes: list[Api] = [
-        Api(name="probe", args=(ctypes.POINTER(HidProbeArgs),), return_type=c_int),
-        Api(name="set_callbacks", args=(ctypes.POINTER(Callbacks),), return_type=None),
+        Api(
+            name="probe",
+            args=(ctypes.POINTER(HidProbeArgs),),
+            return_type=c_int,
+            optional=True,
+        ),
+        Api(
+            name="set_callbacks",
+            args=(ctypes.POINTER(Callbacks),),
+            return_type=None,
+            optional=False,
+        ),
     ]
 
     def __init__(self, lib):
@@ -120,6 +131,8 @@ class Bpf:
                 f"Error loading the library: {e}. Maybe export LD_LIBRARY_PATH=builddir/test"
             )
         for api in cls._api_prototypes:
+            if api.optional and not hasattr(lib, api.name):
+                continue
             func = getattr(lib, api.name)
             func.argtypes = api.args
             func.restype = api.return_type
