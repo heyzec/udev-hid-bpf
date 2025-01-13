@@ -51,6 +51,7 @@ variables:
     python3-GitPython
     libevdev
     systemd-udev
+    unzip
   DEBIAN_PACKAGES: >
     bpftool
     clang
@@ -68,9 +69,9 @@ variables:
     sudo
     xz-utils
   DEBIAN_DISTRIBUTION_EXEC: 'bash ./.gitlab-ci/rustup.sh'
-  FEDORA_TAG:  '2024-10-21.0'
+  FEDORA_TAG:  '2025-01-14.0'
   DEBIAN_TAG:  '2024-11.29.0'
-  FDO_DISTRIBUTION_EXEC: 'pip3 install --break-system-packages git+https://gitlab.freedesktop.org/libevdev/hid-tools/'
+  FDO_DISTRIBUTION_EXEC: 'curl -LO https://github.com/hidutils/hid-replay/releases/download/0.2.0/hid-replay.zip ; unzip hid-replay.zip ; chmod +x hid-replay; mv hid-replay /usr/bin/'
   RUST_BACKTRACE: '1'
   INSTDIR: _inst
   PREFIX: /$INSTDIR
