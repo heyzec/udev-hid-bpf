@@ -194,7 +194,7 @@ test_cmd_add_with_path() {
 
     "$udev_hid_bpf" --version
     sudo "$udev_hid_bpf" --verbose --debug add "$syspath" "$success_bpf"
-    sudo tree "$fwpath"
+    sudo -E tree "$fwpath"
 
     if [ -n "$wait_after_load" ]; then
         echo "Ctrl+C to continue"
@@ -205,7 +205,7 @@ test_cmd_add_with_path() {
 
     to_bpf_name bpf "$fail_bpf"
     sudo "$udev_hid_bpf" --verbose --debug add "$syspath" "$fail_bpf"
-    sudo tree "$fwpath"
+    sudo -E tree "$fwpath"
     bpf_is_not_loaded "$fail_bpf"
 }
 
@@ -254,7 +254,7 @@ test_cmd_add_via_udev() {
         maxwait=$((maxwait - 1))
     done
 
-    sudo tree "$fwpath_device"
+    sudo -E tree "$fwpath_device"
 
     if [ -n "$wait_after_load" ]; then
         echo "Ctrl+C to continue"

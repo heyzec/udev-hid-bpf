@@ -108,6 +108,7 @@ variables:
     file
     binutils
   MESON_ARGS: -Dtests=enabled
+  CLICOLOR_FORCE: 1
 
 .policy:
   retry:
