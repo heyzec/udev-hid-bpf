@@ -51,6 +51,10 @@ variables:
     python3-GitPython
     libevdev
     systemd-udev
+    virtme-ng
+    qemu-system-x86
+    file
+    binutils
     unzip
   DEBIAN_PACKAGES: >
     bpftool
@@ -69,7 +73,7 @@ variables:
     sudo
     xz-utils
   DEBIAN_DISTRIBUTION_EXEC: 'bash ./.gitlab-ci/rustup.sh'
-  FEDORA_TAG:  '2025-01-14.0'
+  FEDORA_TAG:  '2025-01-14.1'
   DEBIAN_TAG:  '2024-11.29.0'
   FDO_DISTRIBUTION_EXEC: 'curl -LO https://github.com/hidutils/hid-replay/releases/download/0.2.0/hid-replay.zip ; unzip hid-replay.zip ; chmod +x hid-replay; mv hid-replay /usr/bin/'
   RUST_BACKTRACE: '1'
@@ -77,8 +81,8 @@ variables:
   PREFIX: /$INSTDIR
   # Below is for our building of the kernel used in the b2c jobs. A separate tag
   # so we can rebuild that container kernel independently of the rest of the CI pipeline.
-  KERNEL_BUILD_CONTAINER_TAG: '2024-04-10.3'
-  KERNEL_VERSION: '6.6'
+  KERNEL_BUILD_CONTAINER_TAG: '2025-01-13.0'
+  KERNEL_VERSION: '6.12'
   KERNEL_BUILD_PACKAGES: >
     dwarves
     file
@@ -99,6 +103,10 @@ variables:
     perl-Term-ANSIColor
     perl-Encode
     jq
+    virtme-ng
+    qemu-system-x86
+    file
+    binutils
   MESON_ARGS: -Dtests=enabled
 
 .policy:
@@ -200,8 +208,8 @@ debian@container-prep:
     FDO_DISTRIBUTION_EXEC: ''  # we don't need hid-tools here
     FDO_REPO_SUFFIX: build-kernel
 
-.b2c_kernel_url:
-  before_script: &b2c-kernel-url
+.kernel_url:
+  before_script: &kernel-url
     - export KERNEL_URL=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/kernel-$(arch)/v$KERNEL_VERSION/bzImage
 
 # A container just for rebuilding the kernel
@@ -230,7 +238,7 @@ rebuild kernel:
   needs:
     - kernel build container prep
   script:
-    - *b2c-kernel-url
+    - *kernel-url
     - .gitlab-ci/kernel-build.sh
 
 .cargo-build@template:
@@ -409,11 +417,11 @@ cli install:
     - test -e /etc/udev-hid-bpf/0010-HP__Elite-Presenter.bpf.o
     - cat /etc/udev/rules.d/99-hid-bpf-0010-HP__Elite-Presenter.rules
 
-b2c uhid-test:
+vng uhid-test:
   extends:
     - .fedora
     - .policy
-    - .fdo.b2c-image@fedora
+    - .fedora-meson@template
   tags:
     - kvm
   stage: test
@@ -422,17 +430,33 @@ b2c uhid-test:
     - fedora@container-prep
   parallel:
     matrix:
-      - TEST: udev
-        PARAMS: --tracing-only
-      - TEST: path
-        PARAMS: --tracing-only
+      - TEST: test-udev-load
+      - TEST: test-path-load
   variables:
     MESON_BUILDDIR: build_dir
   script:
-    - *b2c-kernel-url
-    - export B2C_KERNEL=$KERNEL_URL
-    - export B2C_COMMAND=".gitlab-ci/start-in-systemd.sh $PARAMS $TEST"
-    - /app/boot2container
+    - *kernel-url
+    - curl -LO $KERNEL_URL
+
+    # run initial compilation before the VM
+    - export instdir=$(realpath "$MESON_BUILDDIR/")/_inst
+    - export MESON_EXTRA_ARGS="-Dbpfs=testing,stable,userhacks -Dprefix=$instdir -Dudevdir=$instdir/etc/udev"
+    - .gitlab-ci/meson-build.sh
+
+    - export COMMAND="test/uhid-test.sh --verbose $TEST"
+    - export -p > .vngenv
+
+    # the container is executed as root, so vng needs some fine tuning
+    - |
+      vng --run ./bzImage \
+          --memory=4G \
+          --user root \
+          --overlay-rwdir=$HOME \
+          --append HOME=$HOME \
+          --overlay-rwdir=$(pwd) \
+          --rwdir=$MESON_BUILDDIR \
+          --exec "source .vngenv; $COMMAND"
+
   artifacts:
     name: "meson-logs-$CI_JOB_NAME_SLUG"
     when: always
