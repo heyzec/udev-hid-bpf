@@ -110,8 +110,8 @@ class TestXPPenDecoMini4:
         assert event == expected
 
 
-@pytest.mark.parametrize("source", ["0010-TUXEDO__Sirius-15-Gen1-and-Gen2"])
-class TestTUXEDOSirius15Gen1andGen2:
+@pytest.mark.parametrize("source", ["0010-TUXEDO__Sirius-16-Gen1-and-Gen2"])
+class TestTUXEDOSirius16Gen1andGen2:
     @pytest.mark.parametrize(
         "report,expected",
         [
