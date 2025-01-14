@@ -193,7 +193,7 @@ test_cmd_add_with_path() {
     bpf=""   # to shut up shellcheck: bpf never assigned
 
     "$udev_hid_bpf" --version
-    sudo "$udev_hid_bpf" --verbose --debug add "$syspath" "$success_bpf"
+    sudo -E "$udev_hid_bpf" --verbose --debug add "$syspath" "$success_bpf"
     sudo -E tree "$fwpath"
 
     if [ -n "$wait_after_load" ]; then
@@ -204,7 +204,7 @@ test_cmd_add_with_path() {
     bpf_is_loaded "$success_bpf"
 
     to_bpf_name bpf "$fail_bpf"
-    sudo "$udev_hid_bpf" --verbose --debug add "$syspath" "$fail_bpf"
+    sudo -E "$udev_hid_bpf" --verbose --debug add "$syspath" "$fail_bpf"
     sudo -E tree "$fwpath"
     bpf_is_not_loaded "$fail_bpf"
 }
@@ -242,7 +242,7 @@ test_cmd_add_via_udev() {
 
     # If we're testing the load (not the trigger), run it manually now
     if [ "$mode" == "load" ]; then
-        sudo "$udev_hid_bpf" --verbose --debug add "$syspath"
+        sudo -E "$udev_hid_bpf" --verbose --debug add "$syspath"
     fi
 
     maxwait=20
