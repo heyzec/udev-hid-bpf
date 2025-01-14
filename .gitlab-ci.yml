@@ -109,6 +109,7 @@ variables:
     binutils
   MESON_ARGS: -Dtests=enabled
   CLICOLOR_FORCE: 1
+  CARGO_TERM_COLOR: always
 
 .policy:
   retry:
