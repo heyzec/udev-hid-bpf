@@ -689,6 +689,11 @@ fn udev_hid_bpf() -> Result<()> {
         modules.push("libbpf");
     }
 
+    let cli_color = match std::env::var("CLICOLOR_FORCE") {
+        Err(_) => stderrlog::ColorChoice::Auto,
+        _ => stderrlog::ColorChoice::Always,
+    };
+
     stderrlog::new()
         .modules(modules)
         .show_module_names(true)
@@ -697,6 +702,7 @@ fn udev_hid_bpf() -> Result<()> {
         } else {
             log::LevelFilter::Warn
         })
+        .color(cli_color)
         .init()
         .unwrap();
 
