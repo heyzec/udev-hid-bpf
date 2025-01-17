@@ -36,17 +36,7 @@ class HidProbeArgs(ctypes.Structure):
 
 
 # see struct hid_bpf_ctx
-class TracingHidBpfCtx(ctypes.Structure):
-    _fields_ = [
-        ("index", c_uint32),
-        ("hid", c_void_p),
-        ("allocated_size", c_uint32),
-        ("report_type", c_int),
-        ("retval_or_size", c_int32),
-    ]
-
-
-class StructOpsHidBpfCtx(ctypes.Structure):
+class HidBpfCtx(ctypes.Structure):
     _fields_ = [
         ("hid", c_void_p),
         ("allocated_size", c_uint32),
@@ -153,12 +143,7 @@ class Bpf:
 
                 def register_fun(generic_name):
                     func = getattr(lib, program["name"])
-                    func.struct_ops = program["section"].startswith("struct_ops")
-                    func.argtypes = (
-                        (ctypes.POINTER(StructOpsHidBpfCtx),)
-                        if func.struct_ops
-                        else (ctypes.POINTER(TracingHidBpfCtx),)
-                    )
+                    func.argtypes = (ctypes.POINTER(HidBpfCtx),)
                     func.restype = c_int
                     setattr(lib, generic_name, func)
 
@@ -216,7 +201,7 @@ class Bpf:
     def hid_bpf_device_event(
         self,
         report: bytes | None = None,
-        ctx: TracingHidBpfCtx | StructOpsHidBpfCtx | None = None,
+        ctx: HidBpfCtx | None = None,
     ) -> None | bytes:
         """
         Call the BPF program's hid_bpf_device_event function.
@@ -225,11 +210,7 @@ class Bpf:
         Otherwise it returns None.
         """
         if ctx is None:
-            ctx = (
-                StructOpsHidBpfCtx()
-                if self.lib._hid_bpf_device_event.struct_ops
-                else TracingHidBpfCtx()
-            )
+            ctx = HidBpfCtx()
 
         if report is not None:
             allocated_size = int(len(report) / 64 + 1) * 64
@@ -258,7 +239,7 @@ class Bpf:
     def hid_bpf_rdesc_fixup(
         self,
         rdesc: bytes | None = None,
-        ctx: TracingHidBpfCtx | StructOpsHidBpfCtx | None = None,
+        ctx: HidBpfCtx | None = None,
     ) -> None | bytes:
         """
         Call the BPF program's hid_bpf_rdesc_fixup function.
@@ -267,11 +248,7 @@ class Bpf:
         Otherwise it returns None.
         """
         if ctx is None:
-            ctx = (
-                StructOpsHidBpfCtx()
-                if self.lib._hid_bpf_rdesc_fixup.struct_ops
-                else TracingHidBpfCtx()
-            )
+            ctx = HidBpfCtx()
 
         if rdesc is not None:
             allocated_size = 4096
