@@ -135,3 +135,39 @@ class TestTUXEDOSirius16Gen1andGen2:
     def test_button_events(self, bpf, report, expected):
         event = bpf.hid_bpf_device_event(report=report)
         assert event == expected
+
+
+@pytest.mark.parametrize("source", ["0010-XPPen__ACK05"])
+class TestXPPenACK05:
+    @pytest.mark.parametrize(
+        "report,expected",
+        [
+            # anything but report ID 02 should be forwarded as such
+            pytest.param(
+                "04 f0 01 00 00 00 00 00 00 00 00 00",
+                "04 f0 01 00 00 00 00 00 00 00 00 00",
+                id="untouched-report",
+            ),
+            # button events are on report ID f0 with a size of 8, mostly untouched
+            pytest.param(
+                "02 f0 01 00 00 00 00 00 00 00 00 00",
+                "f0 f0 01 00 00 00 00 00",
+                id="single-button1-press",
+            ),
+            # CCW wheel events are button events with 0x02 changed to 0xff
+            pytest.param(
+                "02 f0 00 00 00 00 00 02 00 00 00 00",
+                "f0 f0 00 00 00 00 00 ff",
+                id="ccw-wheel",
+            ),
+            # battery reports are on f2 and of size 5
+            pytest.param(
+                "02 f2 01 00 00 00 00 00 00 00 00 00",
+                "f2 f2 01 00 00",
+                id="battery-report",
+            ),
+        ],
+    )
+    def test_button_events(self, bpf, report: str, expected: str):
+        event = bpf.hid_bpf_device_event(report=report)
+        assert event == expected
