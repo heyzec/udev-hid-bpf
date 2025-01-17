@@ -53,8 +53,9 @@ class Callbacks(ctypes.Structure):
 
     def __init__(self, private: PrivateTestData):
         super().__init__(private_data=ctypes.py_object(private))
+        fun_type = ctypes.CFUNCTYPE(None)
         for field, argtype in self._fields_:
-            if field in ["hid_bpf_allocate_context", "hid_bpf_release_context"]:
+            if isinstance(argtype, type(fun_type)):
                 fun = getattr(Callbacks, f"_{field}")
                 setattr(self, field, argtype(fun))
 
@@ -72,6 +73,24 @@ class Callbacks(ctypes.Structure):
         callbacks = callbacks_p.contents
 
         callbacks.ctx = None
+
+    def _hid_bpf_hw_output_report(callbacks_p, ctx_p, data_p, size):
+        DataArray = ctypes.c_uint8 * size
+        c_data = DataArray()
+        p2 = ctypes.byref(c_data)
+        ctypes.memmove(p2, data_p, size)
+        data = bytes(c_data)
+        print(f"hw_output_report with {data}")
+        return size
+
+    def _hid_bpf_hw_request(callbacks_p, ctx_p, data_p, size, _type, reqtype):
+        DataArray = ctypes.c_uint8 * size
+        c_data = DataArray()
+        p2 = ctypes.byref(c_data)
+        ctypes.memmove(p2, data_p, size)
+        data = bytes(c_data)
+        print(f"hw_raw_request with {data}")
+        return size
 
 
 @dataclass

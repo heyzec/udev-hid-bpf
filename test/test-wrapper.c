@@ -8,11 +8,15 @@
 static struct test_callbacks {
 	int (*hid_bpf_allocate_context)(struct test_callbacks *callbacks, unsigned int hid);
 	void (*hid_bpf_release_context)(struct test_callbacks *callbacks, void* ctx);
-	int (*hid_bpf_hw_request)(struct hid_bpf_ctx *ctx,
+	int (*hid_bpf_hw_request)(struct test_callbacks *callbacks,
+				  struct hid_bpf_ctx *ctx,
 				  uint8_t *data,
 				  size_t buf__sz,
 				  int type,
 				  int reqtype);
+	int (*hid_bpf_hw_output_report)(struct test_callbacks *callbacks,
+					struct hid_bpf_ctx *ctx,
+					__u8 *buf, size_t buf__sz);
 	/* The data returned by hid_bpf_get_data */
 	uint8_t *hid_bpf_data;
 	size_t hid_bpf_data_sz;
@@ -56,12 +60,18 @@ void hid_bpf_release_context(void* ctx)
 
 
 int hid_bpf_hw_request(struct hid_bpf_ctx *ctx,
-			      uint8_t *data,
-			      size_t buf__sz,
-			      int type,
-			      int reqtype)
+		       uint8_t *data,
+		       size_t buf__sz,
+		       int type,
+		       int reqtype)
 {
-	return callbacks.hid_bpf_hw_request(ctx, data, buf__sz, type, reqtype);
+	return callbacks.hid_bpf_hw_request(&callbacks, ctx, data, buf__sz, type, reqtype);
+}
+
+int hid_bpf_hw_output_report(struct hid_bpf_ctx *ctx,
+			     __u8 *buf, size_t buf__sz)
+{
+	return callbacks.hid_bpf_hw_output_report(&callbacks, ctx, buf, buf__sz);
 }
 
 int bpf_wq_set_callback_impl(struct bpf_wq *wq,
