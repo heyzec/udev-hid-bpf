@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # Copyright (c) 2024 Red Hat
 
-from . import Bpf, HidProbeArgs
+from . import Bpf, HidProbeArgs, PrivateTestData
 
+import binascii
 import logging
 import struct
 import pytest
@@ -171,3 +172,26 @@ class TestXPPenACK05:
     def test_button_events(self, bpf, report: str, expected: str):
         event = bpf.hid_bpf_device_event(report=report)
         assert event == expected
+
+    def test_probe(self, bpf):
+        private = PrivateTestData(bpf)
+        expected_output_data = binascii.unhexlify(
+            "02 b0 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".replace(
+                " ", ""
+            )
+        )
+
+        probe_args = HidProbeArgs()
+        probe_args.rdesc_size = 37
+        pa = bpf.probe(probe_args, private)
+        assert pa.retval == -22
+        assert len(private.output_reports) == 0
+
+        probe_args.rdesc_size = 36
+        pa = bpf.probe(probe_args, private)
+        assert pa.retval == 0
+        assert len(private.output_reports) == 1
+        output_report = private.output_reports.pop()
+
+        assert output_report.data == expected_output_data
+        assert output_report.time == 0
