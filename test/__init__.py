@@ -14,10 +14,13 @@ import ctypes
 import os
 import json
 import pytest
+import random
+import dataclasses
 
 from .btf import Btf
 
 logger = logging.getLogger(__name__)
+random.seed()
 
 
 # to be automatically field by BTF thanks to libbpf
@@ -35,12 +38,21 @@ class HidBpfCtx(ctypes.Structure):
     cname = "hid_bpf_ctx"
 
 
+@dataclass
+class PrivateTestData:
+    current_ctx: HidBpfCtx = dataclasses.field(default_factory=HidBpfCtx)
+    id: int = dataclasses.field(default_factory=lambda: random.randint(0, 0xFFFF))
+
+
 # see struct test_callbacks
 class Callbacks(ctypes.Structure):
     cname = "test_callbacks"
     _fields_overrides_ = {
         "private_data": ctypes.py_object,
     }
+
+    def __init__(self, private: PrivateTestData):
+        super().__init__(private_data=ctypes.py_object(private))
 
 
 @dataclass
@@ -188,14 +200,24 @@ class Bpf:
         """
         self.lib._set_callbacks(callbacks)
 
-    def probe(self, probe_args: HidProbeArgs) -> HidProbeArgs:
+    def probe(
+        self,
+        probe_args: HidProbeArgs,
+        private_data: PrivateTestData | None = None,
+    ) -> HidProbeArgs:
         """Call the BPF program's probe() function"""
+        if private_data is None:
+            private_data = PrivateTestData()
+
+        callbacks = Callbacks(private_data)
+        self.set_callbacks(callbacks)
         # We copy so our caller's probe args are separate from
         # the ones we return after the BPF program modifies them.
         pa = HidProbeArgs()
         p1 = ctypes.byref(probe_args)
         p2 = ctypes.byref(pa)
         ctypes.memmove(p2, p1, ctypes.sizeof(HidProbeArgs))
+        pa.hid = callbacks.private_data.id
         rc = self.lib._probe(ctypes.byref(pa))
         if rc != 0:
             raise OSError(rc)
@@ -204,7 +226,7 @@ class Bpf:
     def hid_bpf_device_event(
         self,
         report: bytes | None = None,
-        ctx: HidBpfCtx | None = None,
+        private_data: PrivateTestData | None = None,
     ) -> None | bytes:
         """
         Call the BPF program's hid_bpf_device_event function.
@@ -212,13 +234,15 @@ class Bpf:
         If a report is given, it returns the (possibly modified) report.
         Otherwise it returns None.
         """
-        if ctx is None:
-            ctx = HidBpfCtx()
+        if private_data is None:
+            private_data = PrivateTestData()
+
+        ctx = private_data.current_ctx
 
         if report is not None:
             allocated_size = int(len(report) / 64 + 1) * 64
             data = (ctypes.c_uint8 * allocated_size)(*report)
-            callbacks = Callbacks()
+            callbacks = Callbacks(private_data)
             callbacks.hid_bpf_data = data
             callbacks.hid_bpf_data_sz = allocated_size
             ctx.allocated_size = allocated_size
@@ -242,7 +266,7 @@ class Bpf:
     def hid_bpf_rdesc_fixup(
         self,
         rdesc: bytes | None = None,
-        ctx: HidBpfCtx | None = None,
+        private_data: PrivateTestData | None = None,
     ) -> None | bytes:
         """
         Call the BPF program's hid_bpf_rdesc_fixup function.
@@ -250,13 +274,15 @@ class Bpf:
         If an rdesc is given, it returns the (possibly modified) rdesc.
         Otherwise it returns None.
         """
-        if ctx is None:
-            ctx = HidBpfCtx()
+        if private_data is None:
+            private_data = PrivateTestData()
+
+        ctx = private_data.current_ctx
 
         if rdesc is not None:
             allocated_size = 4096
             data = (ctypes.c_uint8 * allocated_size)(*rdesc)
-            callbacks = Callbacks()
+            callbacks = Callbacks(private_data)
             callbacks.hid_bpf_data = data
             callbacks.hid_bpf_data_sz = allocated_size
             ctx.allocated_size = allocated_size

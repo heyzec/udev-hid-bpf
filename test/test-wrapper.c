@@ -18,6 +18,8 @@ static struct test_callbacks {
 	/* The data returned by hid_bpf_get_data */
 	uint8_t *hid_bpf_data;
 	size_t hid_bpf_data_sz;
+	/* meaningful in python only */
+	void *private_data;
 } callbacks;
 
 void set_callbacks(struct test_callbacks *cb)
