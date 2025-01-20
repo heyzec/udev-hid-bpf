@@ -53,6 +53,25 @@ class Callbacks(ctypes.Structure):
 
     def __init__(self, private: PrivateTestData):
         super().__init__(private_data=ctypes.py_object(private))
+        for field, argtype in self._fields_:
+            if field in ["hid_bpf_allocate_context", "hid_bpf_release_context"]:
+                fun = getattr(Callbacks, f"_{field}")
+                setattr(self, field, argtype(fun))
+
+    def _hid_bpf_allocate_context(callbacks_p, hid: int):
+        callbacks = callbacks_p.contents
+
+        pdata = callbacks.private_data
+        assert pdata.id == hid
+
+        callbacks.ctx = ctypes.pointer(pdata.current_ctx)
+
+        return 0
+
+    def _hid_bpf_release_context(callbacks_p, ctx):
+        callbacks = callbacks_p.contents
+
+        callbacks.ctx = None
 
 
 @dataclass
