@@ -40,7 +40,7 @@ foreach obj: bpf_objects
     )
     shared_library('test-@0@'.format(fname),
         src,
-        c_args : ['-Wno-unknown-pragmas', '-DUDEV_HID_BPF_TEST_SUITE'],
+        c_args : ['-Wno-unknown-pragmas', '-DUDEV_HID_BPF_TEST_SUITE', '-gbtf'],
         include_directories: include_directories('../src/bpf/'),
         install: false,
     )

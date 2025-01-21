@@ -4,12 +4,6 @@
 
 from ctypes import (
     c_int,
-    c_ubyte,
-    c_uint,
-    c_uint32,
-    c_int32,
-    c_void_p,
-    c_size_t,
 )
 from typing import Optional, Tuple, Type, Self
 from dataclasses import dataclass
@@ -21,41 +15,32 @@ import os
 import json
 import pytest
 
+from .btf import Btf
 
 logger = logging.getLogger(__name__)
 
 
+# to be automatically field by BTF thanks to libbpf
+class HidDevice(ctypes.Structure):
+    cname = "hid_device"
+
+
 # see struct hid_probe_args
 class HidProbeArgs(ctypes.Structure):
-    _fields_ = [
-        ("hid", c_uint),
-        ("rdesc_size", c_uint),
-        ("rdesc", c_ubyte * 4096),
-        ("retval", c_int),
-    ]
+    cname = "hid_bpf_probe_args"
 
 
 # see struct hid_bpf_ctx
 class HidBpfCtx(ctypes.Structure):
-    _fields_ = [
-        ("hid", c_void_p),
-        ("allocated_size", c_uint32),
-        ("retval_or_size", c_int32),
-    ]
+    cname = "hid_bpf_ctx"
 
 
 # see struct test_callbacks
 class Callbacks(ctypes.Structure):
-    _fields_ = [
-        ("hid_bpf_allocate_context", ctypes.CFUNCTYPE(c_void_p, c_uint)),
-        ("hid_bpf_release_context", ctypes.CFUNCTYPE(None, c_void_p)),
-        (
-            "hid_bpf_hw_request",
-            ctypes.CFUNCTYPE(c_int, c_void_p, c_void_p, c_size_t, c_int, c_int),
-        ),
-        ("hid_bpf_data", ctypes.POINTER(ctypes.c_uint8)),
-        ("hid_bpf_data_sz", ctypes.c_size_t),
-    ]
+    cname = "test_callbacks"
+    _fields_overrides_ = {
+        "private_data": ctypes.py_object,
+    }
 
 
 @dataclass
@@ -107,6 +92,24 @@ class Bpf:
         sofile = Path(ld_path) / f"{name}.so"
         if not sofile.exists():
             pytest.skip(f"Unable to locate {sofile}, assuming this BPF wasn't built")
+
+        sofile_dir = sofile.with_suffix(".so.p")
+        if not sofile_dir.exists():
+            pytest.skip(
+                f"Unable to locate {sofile_dir}, assuming this BPF wasn't built"
+            )
+
+        # We recreate the BTF information for every .so so the Btf class knows
+        # about our types
+        btf = Btf.load(list(sofile_dir.iterdir()))
+        for c in [
+            HidProbeArgs,
+            HidDevice,
+            HidBpfCtx,
+            Callbacks,
+        ]:
+            btf.build_struct(c)
+            assert hasattr(c, "_fields_")
 
         jsonfile = Path(ld_path) / f"{name}.json"
         if not jsonfile.exists():
@@ -219,7 +222,7 @@ class Bpf:
             callbacks.hid_bpf_data = data
             callbacks.hid_bpf_data_sz = allocated_size
             ctx.allocated_size = allocated_size
-            ctx.retval_or_size = len(report)
+            ctx.size = len(report)
             self.set_callbacks(callbacks)
         else:
             data = None
@@ -229,12 +232,12 @@ class Bpf:
             raise OSError(-rc)
 
         if rc > 0:
-            ctx.retval_or_size = rc
+            ctx.retval = rc
 
         if report is None:
             return None
         assert data is not None
-        return bytes(data[: ctx.retval_or_size])
+        return bytes(data[: ctx.retval])
 
     def hid_bpf_rdesc_fixup(
         self,
@@ -257,7 +260,7 @@ class Bpf:
             callbacks.hid_bpf_data = data
             callbacks.hid_bpf_data_sz = allocated_size
             ctx.allocated_size = allocated_size
-            ctx.retval_or_size = len(rdesc)
+            ctx.size = len(rdesc)
             self.set_callbacks(callbacks)
         else:
             data = None
@@ -267,9 +270,9 @@ class Bpf:
             raise OSError(rc)
 
         if rc > 0:
-            ctx.retval_or_size = rc
+            ctx.retval = rc
 
         if rdesc is None:
             return None
         assert data is not None
-        return bytes(data[: ctx.retval_or_size])
+        return bytes(data[: ctx.retval])
