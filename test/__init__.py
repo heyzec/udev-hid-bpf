@@ -16,6 +16,7 @@ import json
 import pytest
 import random
 import dataclasses
+import errno
 
 from .btf import Btf
 
@@ -52,6 +53,9 @@ class Callbacks(ctypes.Structure):
     }
 
     def __init__(self, private: PrivateTestData):
+        hid = HidDevice(id=private.id)
+        private.current_ctx.hid = ctypes.pointer(hid)
+
         super().__init__(private_data=ctypes.py_object(private))
         fun_type = ctypes.CFUNCTYPE(None)
         for field, argtype in self._fields_:
@@ -74,7 +78,15 @@ class Callbacks(ctypes.Structure):
 
         callbacks.ctx = None
 
+    @classmethod
+    def validate_ctx(cls, callbacks_p, ctx_p):
+        callbacks = callbacks_p.contents
+        hid = ctx_p.contents.hid.contents
+        return hid.id == callbacks.private_data.id
+
     def _hid_bpf_hw_output_report(callbacks_p, ctx_p, data_p, size):
+        if not Callbacks.validate_ctx(callbacks_p, ctx_p):
+            return -errno.EINVAL
         DataArray = ctypes.c_uint8 * size
         c_data = DataArray()
         p2 = ctypes.byref(c_data)
@@ -84,6 +96,8 @@ class Callbacks(ctypes.Structure):
         return size
 
     def _hid_bpf_hw_request(callbacks_p, ctx_p, data_p, size, _type, reqtype):
+        if not Callbacks.validate_ctx(callbacks_p, ctx_p):
+            return -errno.EINVAL
         DataArray = ctypes.c_uint8 * size
         c_data = DataArray()
         p2 = ctypes.byref(c_data)
