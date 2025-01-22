@@ -19,7 +19,7 @@ import random
 import dataclasses
 import errno
 
-from .btf import Btf
+from .btf import Btf, Map
 
 logger = logging.getLogger(__name__)
 random.seed()
@@ -185,9 +185,10 @@ class Bpf:
         ),
     ]
 
-    def __init__(self, lib):
+    def __init__(self, lib, maps: dict[int, Map]):
         self.lib = lib
         self._callbacks = None
+        self.maps = maps
 
     @classmethod
     def _load(cls, name: str) -> Self:
@@ -246,6 +247,11 @@ class Bpf:
             func.restype = api.return_type
             setattr(lib, api.basename, func)
 
+        maps = {
+            ctypes.cast(getattr(lib, m.name), ctypes.c_void_p).value: m
+            for m in btf.maps
+        }
+
         try:
             # Only one entry per json file so we're good
             js = json.load(open(jsonfile))[0]
@@ -270,7 +276,7 @@ class Bpf:
                 f"Error loading the JSON file: {e}. Unexpected LD_LIBRARY_PATH?"
             )
 
-        return cls(lib)
+        return cls(lib, maps)
 
     @classmethod
     def load(cls, name: str) -> Self:

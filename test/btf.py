@@ -159,6 +159,23 @@ class BtfParam(ctypes.Structure):
     ]
 
 
+# /* BTF_KIND_DATASEC is followed by multiple "struct btf_var_secinfo"
+#  * to describe all BTF_KIND_VAR types it contains along with it's
+#  * in-section offset as well as size.
+#  */
+# struct btf_var_secinfo {
+# 	__u32	type;
+# 	__u32	offset;
+# 	__u32	size;
+# };
+class BtfVarSecinfo(ctypes.Structure):
+    _fields_ = [
+        ("type", c_uint32),
+        ("offset", c_uint32),
+        ("size", c_uint32),
+    ]
+
+
 @dataclass
 class Api:
     """
@@ -168,6 +185,12 @@ class Api:
     name: str
     args: Tuple[Type[ctypes._SimpleCData | ctypes._Pointer], ...]
     return_type: Optional[Type[ctypes._SimpleCData | ctypes._Pointer]]
+
+
+@dataclass
+class Map:
+    name: str
+    ctype: type
 
 
 class Btf:
@@ -441,3 +464,40 @@ class Btf:
             return
 
         self.get_type(cname, libbpf.btf__find_by_name(btf, cname.encode()))
+
+    @property
+    def maps(self):
+        btf = self.btf
+        libbpf = self.lib
+        type_id = libbpf.btf__find_by_name(btf, ".maps".encode())
+        if type_id < 0:
+            return []
+
+        m_type_p = libbpf.btf__type_by_id(btf, type_id)
+        m_type = BtfType.from_address(m_type_p)
+        kind = BtfKind(m_type.kind)
+
+        assert kind == BtfKind.BTF_KIND_DATASEC
+
+        if m_type.vlen == 0:
+            return []
+
+        MAPS = BtfVarSecinfo * m_type.vlen
+        maps = MAPS.from_address(m_type_p + ctypes.sizeof(BtfType))
+
+        maps_types = [
+            BtfType.from_address(libbpf.btf__type_by_id(btf, m.type)) for m in maps
+        ]
+
+        retval = []
+
+        for m in maps_types:
+            map_name = libbpf.btf__name_by_offset(btf, m.name_off).decode()
+            type_id = m.type
+
+            ctype = self.get_type("", type_id)
+            value = [f[1] for f in ctype._fields_ if f[0] == "value"][0]
+
+            retval.append(Map(map_name, value._type_))
+
+        return retval
