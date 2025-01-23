@@ -195,3 +195,34 @@ class TestXPPenACK05:
 
         assert output_report.data == expected_output_data
         assert output_report.time == 0
+
+    def test_delayed_callback(self, bpf):
+        private = PrivateTestData(bpf)
+        report = binascii.unhexlify(
+            "02 f8 02 01 00 00 00 00 00 00 00 00".replace(" ", "")
+        )
+        expected_output_data = binascii.unhexlify(
+            "02 b0 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00".replace(
+                " ", ""
+            )
+        )
+
+        # we need to call .probe() first to initialize the asyncs
+        probe_args = HidProbeArgs()
+        probe_args.rdesc_size = 36
+        pa = bpf.probe(probe_args, private)
+        assert pa.retval == 0
+        assert len(private.output_reports) == 1
+        output_report = private.output_reports.pop()
+
+        assert output_report.data == expected_output_data
+        assert output_report.time == 0
+
+        event = bpf.hid_bpf_device_event(report, private)
+        assert event == report
+
+        assert len(private.output_reports) == 1
+        output_report = private.output_reports.pop()
+
+        assert output_report.data == expected_output_data
+        assert output_report.time == 10
