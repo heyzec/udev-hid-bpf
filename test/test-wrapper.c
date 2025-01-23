@@ -17,6 +17,8 @@ static struct test_callbacks {
 	int (*hid_bpf_hw_output_report)(struct test_callbacks *callbacks,
 					struct hid_bpf_ctx *ctx,
 					__u8 *buf, size_t buf__sz);
+	int (*bpf_map_lookup_elem)(struct test_callbacks *callbacks, void *map,
+				   const void *key);
 	/* The data returned by hid_bpf_get_data */
 	uint8_t *hid_bpf_data;
 	size_t hid_bpf_data_sz;
@@ -24,6 +26,8 @@ static struct test_callbacks {
 	struct hid_bpf_ctx *ctx;
 	/* meaningful in python only */
 	void *private_data;
+	/* various helpers/kfuncs return value */
+	void *helpers_retval;
 } callbacks;
 
 void set_callbacks(struct test_callbacks *cb)
@@ -79,4 +83,15 @@ int bpf_wq_set_callback_impl(struct bpf_wq *wq,
 		unsigned int flags__k, void *aux__ign)
 {
 	return 0;
+}
+
+void *bpf_map_lookup_elem__hid_bpf(struct bpf_map *map, const void *key)
+{
+	int err;
+
+	err = callbacks.bpf_map_lookup_elem(&callbacks, map, key);
+	if (err)
+		return NULL;
+
+	return callbacks.helpers_retval;
 }

@@ -70,10 +70,12 @@ class HidRawRequest:
 
 @dataclass
 class PrivateTestData:
+    bpf: "Bpf"
     current_ctx: HidBpfCtx = dataclasses.field(default_factory=HidBpfCtx)
     id: int = dataclasses.field(default_factory=lambda: random.randint(0, 0xFFFF))
     output_reports: list[OutputReport] = dataclasses.field(default_factory=list)
     hw_requests: list[HidRawRequest] = dataclasses.field(default_factory=list)
+    maps_data: dict[int, dict[int, ...]] = dataclasses.field(default_factory=dict)
 
 
 # see struct test_callbacks
@@ -149,6 +151,29 @@ class Callbacks(ctypes.Structure):
         )
         return size
 
+    def _bpf_map_lookup_elem(callbacks_p, map_p, key_p):
+        callbacks = callbacks_p.contents
+
+        pdata = callbacks.private_data
+
+        if map_p not in pdata.bpf.maps:
+            return -errno.ENOENT
+
+        map = pdata.bpf.maps[map_p]
+
+        # ensure our type is known
+        pdata.bpf.btf.build_struct(map.ctype)
+
+        # allocate / get memory
+        map_data_dict = pdata.maps_data.setdefault(map_p, {})
+        key = ctypes.c_int.from_address(key_p).value
+        data = map_data_dict.setdefault(key, map.ctype())
+
+        # store the returned value in callbacks
+        callbacks.helpers_retval = ctypes.cast(ctypes.byref(data), ctypes.c_void_p)
+
+        return 0
+
 
 @dataclass
 class Api:
@@ -185,10 +210,11 @@ class Bpf:
         ),
     ]
 
-    def __init__(self, lib, maps: dict[int, Map]):
+    def __init__(self, lib, btf: Btf, maps: dict[int, Map]):
         self.lib = lib
         self._callbacks = None
         self.maps = maps
+        self.btf = btf
 
     @classmethod
     def _load(cls, name: str) -> Self:
@@ -276,7 +302,7 @@ class Bpf:
                 f"Error loading the JSON file: {e}. Unexpected LD_LIBRARY_PATH?"
             )
 
-        return cls(lib, maps)
+        return cls(lib, btf, maps)
 
     @classmethod
     def load(cls, name: str) -> Self:
@@ -308,7 +334,7 @@ class Bpf:
     ) -> HidProbeArgs:
         """Call the BPF program's probe() function"""
         if private_data is None:
-            private_data = PrivateTestData()
+            private_data = PrivateTestData(bpf=self)
 
         callbacks = Callbacks(private_data)
         self.set_callbacks(callbacks)
@@ -336,7 +362,7 @@ class Bpf:
         Otherwise it returns None.
         """
         if private_data is None:
-            private_data = PrivateTestData()
+            private_data = PrivateTestData(bpf=self)
 
         ctx = private_data.current_ctx
 
@@ -376,7 +402,7 @@ class Bpf:
         Otherwise it returns None.
         """
         if private_data is None:
-            private_data = PrivateTestData()
+            private_data = PrivateTestData(bpf=self)
 
         ctx = private_data.current_ctx
 
