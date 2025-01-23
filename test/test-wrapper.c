@@ -5,6 +5,15 @@
 #include <stdio.h>
 #include <vmlinux.h>
 
+typedef int (*hid_bpf_async_callback_t)(void *map, int *key, void *value);
+
+struct test_async_cb {
+	void *map;
+	int key;
+	void *value;
+	hid_bpf_async_callback_t cb;
+};
+
 static struct test_callbacks {
 	int (*hid_bpf_allocate_context)(struct test_callbacks *callbacks, unsigned int hid);
 	void (*hid_bpf_release_context)(struct test_callbacks *callbacks, void* ctx);
@@ -19,6 +28,10 @@ static struct test_callbacks {
 					__u8 *buf, size_t buf__sz);
 	int (*bpf_map_lookup_elem)(struct test_callbacks *callbacks, void *map,
 				   const void *key);
+	int (*bpf_timer_init)(struct test_callbacks *callbacks, void *timer, void *map, unsigned int flags);
+	int (*bpf_timer_set_callback)(struct test_callbacks *callbacks, void *timer, void* cb);
+	int (*bpf_timer_start)(struct test_callbacks *callbacks, void *timer,
+			       int delay, int flags);
 	/* The data returned by hid_bpf_get_data */
 	uint8_t *hid_bpf_data;
 	size_t hid_bpf_data_sz;
@@ -29,8 +42,6 @@ static struct test_callbacks {
 	/* various helpers/kfuncs return value */
 	void *helpers_retval;
 } callbacks;
-
-typedef int (*hid_bpf_async_callback_t)(void *map, int *key, void *value);
 
 void set_callbacks(struct test_callbacks *cb)
 {
@@ -63,7 +74,6 @@ void hid_bpf_release_context(void* ctx)
 {
 	callbacks.hid_bpf_release_context(&callbacks, ctx);
 }
-
 
 int hid_bpf_hw_request(struct hid_bpf_ctx *ctx,
 		       uint8_t *data,
@@ -110,17 +120,28 @@ void bpf_spin_lock__hid_bpf(void* lock)
 void bpf_spin_unlock__hid_bpf(void* lock)
 {
 }
+
 int bpf_timer_init__hid_bpf(void *timer, void *map, int clock)
 {
-	return 0;
+	return callbacks.bpf_timer_init(&callbacks, timer, map, clock);
 }
 
 int bpf_timer_set_callback__hid_bpf(void *timer, hid_bpf_async_callback_t cb)
 {
-	return 0;
+	return callbacks.bpf_timer_set_callback(&callbacks, timer, cb);
 }
 
 int bpf_timer_start__hid_bpf(void *timer, int delay, int flags)
 {
+	struct test_async_cb *async_cb;
+	int err;
+
+	err = callbacks.bpf_timer_start(&callbacks, timer, delay, flags);
+	if (err)
+		return err;
+
+	async_cb = (struct test_async_cb *)callbacks.helpers_retval;
+	async_cb->cb(async_cb->map, &async_cb->key, async_cb->value);
+
 	return 0;
 }

@@ -40,6 +40,17 @@ class HidBpfCtx(ctypes.Structure):
     cname = "hid_bpf_ctx"
 
 
+class BpfTimer(ctypes.Structure):
+    cname = "bpf_timer"
+
+
+class TestAsyncCb(ctypes.Structure):
+    cname = "test_async_cb"
+    _fields_overrides_ = {
+        "cb": ctypes.c_void_p,  # just too complex to handle function pointers
+    }
+
+
 @dataclass
 class OutputReport:
     data: Tuple[bytes]
@@ -76,6 +87,7 @@ class PrivateTestData:
     output_reports: list[OutputReport] = dataclasses.field(default_factory=list)
     hw_requests: list[HidRawRequest] = dataclasses.field(default_factory=list)
     maps_data: dict[int, dict[int, ...]] = dataclasses.field(default_factory=dict)
+    asyncs: dict[int, TestAsyncCb] = dataclasses.field(default_factory=dict)
 
 
 # see struct test_callbacks
@@ -174,6 +186,66 @@ class Callbacks(ctypes.Structure):
 
         return 0
 
+    def _bpf_timer_init(callbacks_p, timer_p, map_p, clock):
+        callbacks = callbacks_p.contents
+
+        pdata = callbacks.private_data
+
+        if map_p not in pdata.bpf.maps:
+            return -errno.ENOENT
+
+        map = pdata.bpf.maps[map_p]
+        map_data_dict = pdata.maps_data[map_p]
+
+        timer_field = [name for name, value in map.ctype._fields_ if value == BpfTimer]
+
+        # this ensures the provided map_p is correct
+        assert len(timer_field) == 1
+
+        timer_field = timer_field.pop()
+
+        for key, value in map_data_dict.items():
+            t = ctypes.byref(getattr(value, timer_field))
+            t_p = ctypes.cast(t, ctypes.c_void_p).value
+            if timer_p == t_p:
+                pdata.asyncs[timer_p] = TestAsyncCb(
+                    map_p,
+                    key,
+                    ctypes.cast(ctypes.byref(value), ctypes.c_void_p),
+                    None,
+                )
+                return 0
+
+        return -errno.EINVAL
+
+    def _bpf_timer_set_callback(callbacks_p, timer_p, cb):
+        callbacks = callbacks_p.contents
+
+        pdata = callbacks.private_data
+
+        if timer_p not in pdata.asyncs:
+            return -errno.EINVAL
+
+        _async = pdata.asyncs[timer_p]
+        _async.cb = ctypes.c_void_p(cb)
+
+        return 0
+
+    def _bpf_timer_start(callbacks_p, timer_p, delay, flags):
+        callbacks = callbacks_p.contents
+
+        pdata = callbacks.private_data
+
+        if timer_p not in pdata.asyncs:
+            return -errno.EINVAL
+
+        _async = pdata.asyncs[timer_p]
+
+        # store the returned value in callbacks
+        callbacks.helpers_retval = ctypes.cast(ctypes.byref(_async), ctypes.c_void_p)
+
+        return 0
+
 
 @dataclass
 class Api:
@@ -240,6 +312,8 @@ class Bpf:
             HidProbeArgs,
             HidDevice,
             HidBpfCtx,
+            BpfTimer,
+            TestAsyncCb,
             Callbacks,
         ]:
             btf.build_struct(c)
