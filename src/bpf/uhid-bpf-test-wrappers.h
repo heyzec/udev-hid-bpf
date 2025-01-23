@@ -18,6 +18,8 @@
 #undef BPF_PROG
 #define BPF_PROG(name, args...) name(args)
 
+typedef int (*hid_bpf_async_callback_t)(void *map, int *key, void *value);
+
 /* below are BPF helpers: they are stored as an enum and
  * directly called as if it were their address.
  * This works in BPF because the bpf target knows about them,
@@ -32,5 +34,20 @@
 
 #define bpf_map_lookup_elem bpf_map_lookup_elem__hid_bpf
 extern void *bpf_map_lookup_elem(void *map, const void *key);
+
+#define bpf_spin_lock(a) bpf_spin_lock__hid_bpf(a)
+extern void bpf_spin_lock(void *);
+
+#define bpf_spin_unlock bpf_spin_unlock__hid_bpf
+extern void bpf_spin_unlock(void *);
+
+#define bpf_timer_init bpf_timer_init__hid_bpf
+extern int bpf_timer_init(void *, void *, int);
+
+#define bpf_timer_set_callback bpf_timer_set_callback__hid_bpf
+extern int bpf_timer_set_callback(void *, hid_bpf_async_callback_t);
+
+#define bpf_timer_start bpf_timer_start__hid_bpf
+extern int bpf_timer_start(void *, int, int);
 
 #endif /* __UHID_BPF_TEST_WRAPPERS_H */

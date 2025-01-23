@@ -30,6 +30,8 @@ static struct test_callbacks {
 	void *helpers_retval;
 } callbacks;
 
+typedef int (*hid_bpf_async_callback_t)(void *map, int *key, void *value);
+
 void set_callbacks(struct test_callbacks *cb)
 {
 	callbacks = *cb;
@@ -79,8 +81,13 @@ int hid_bpf_hw_output_report(struct hid_bpf_ctx *ctx,
 }
 
 int bpf_wq_set_callback_impl(struct bpf_wq *wq,
-		int (callback_fn)(void *map, int *key, struct bpf_wq *wq),
+		int (callback_fn)(void *map, int *key, void *value),
 		unsigned int flags__k, void *aux__ign)
+{
+	return 0;
+}
+
+int bpf_wq_init(struct bpf_wq *wq, void *p__map, unsigned int flags)
 {
 	return 0;
 }
@@ -94,4 +101,26 @@ void *bpf_map_lookup_elem__hid_bpf(struct bpf_map *map, const void *key)
 		return NULL;
 
 	return callbacks.helpers_retval;
+}
+
+void bpf_spin_lock__hid_bpf(void* lock)
+{
+}
+
+void bpf_spin_unlock__hid_bpf(void* lock)
+{
+}
+int bpf_timer_init__hid_bpf(void *timer, void *map, int clock)
+{
+	return 0;
+}
+
+int bpf_timer_set_callback__hid_bpf(void *timer, hid_bpf_async_callback_t cb)
+{
+	return 0;
+}
+
+int bpf_timer_start__hid_bpf(void *timer, int delay, int flags)
+{
+	return 0;
 }
