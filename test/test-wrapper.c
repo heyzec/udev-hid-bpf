@@ -29,9 +29,10 @@ static struct test_callbacks {
 	int (*bpf_map_lookup_elem)(struct test_callbacks *callbacks, void *map,
 				   const void *key);
 	int (*bpf_timer_init)(struct test_callbacks *callbacks, void *timer, void *map, unsigned int flags);
-	int (*bpf_timer_set_callback)(struct test_callbacks *callbacks, void *timer, void* cb);
-	int (*bpf_timer_start)(struct test_callbacks *callbacks, void *timer,
+	int (*async_set_callback)(struct test_callbacks *callbacks, void *timer, void* cb);
+	int (*async_start)(struct test_callbacks *callbacks, void *timer,
 			       int delay, int flags);
+	int (*bpf_wq_init)(struct test_callbacks *callbacks, void *wq, void *map, int clock);
 	/* The data returned by hid_bpf_get_data */
 	uint8_t *hid_bpf_data;
 	size_t hid_bpf_data_sz;
@@ -90,15 +91,29 @@ int hid_bpf_hw_output_report(struct hid_bpf_ctx *ctx,
 	return callbacks.hid_bpf_hw_output_report(&callbacks, ctx, buf, buf__sz);
 }
 
-int bpf_wq_set_callback_impl(struct bpf_wq *wq,
-		int (callback_fn)(void *map, int *key, void *value),
-		unsigned int flags__k, void *aux__ign)
+int bpf_wq_set_callback_impl(struct bpf_wq *wq, hid_bpf_async_callback_t cb,
+			     unsigned int flags__k, void *aux__ign)
 {
-	return 0;
+	return callbacks.async_set_callback(&callbacks, wq, cb);
 }
 
 int bpf_wq_init(struct bpf_wq *wq, void *p__map, unsigned int flags)
 {
+	return callbacks.bpf_wq_init(&callbacks, wq, p__map, flags);
+}
+
+int bpf_wq_start(struct bpf_wq *wq, unsigned int flags)
+{
+	struct test_async_cb *async_cb;
+	int err;
+
+	err = callbacks.async_start(&callbacks, wq, 0, flags);
+	if (err)
+		return err;
+
+	async_cb = (struct test_async_cb *)callbacks.helpers_retval;
+	async_cb->cb(async_cb->map, &async_cb->key, async_cb->value);
+
 	return 0;
 }
 
@@ -128,7 +143,7 @@ int bpf_timer_init__hid_bpf(void *timer, void *map, int clock)
 
 int bpf_timer_set_callback__hid_bpf(void *timer, hid_bpf_async_callback_t cb)
 {
-	return callbacks.bpf_timer_set_callback(&callbacks, timer, cb);
+	return callbacks.async_set_callback(&callbacks, timer, cb);
 }
 
 int bpf_timer_start__hid_bpf(void *timer, int delay, int flags)
@@ -136,7 +151,7 @@ int bpf_timer_start__hid_bpf(void *timer, int delay, int flags)
 	struct test_async_cb *async_cb;
 	int err;
 
-	err = callbacks.bpf_timer_start(&callbacks, timer, delay, flags);
+	err = callbacks.async_start(&callbacks, timer, delay, flags);
 	if (err)
 		return err;
 
