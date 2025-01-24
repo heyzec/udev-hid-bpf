@@ -42,6 +42,8 @@ static struct test_callbacks {
 	void *private_data;
 	/* various helpers/kfuncs return value */
 	void *helpers_retval;
+	/* the virtual time of events */
+	unsigned long long int time;
 } callbacks;
 
 void set_callbacks(struct test_callbacks *cb)
@@ -149,14 +151,21 @@ int bpf_timer_set_callback__hid_bpf(void *timer, hid_bpf_async_callback_t cb)
 int bpf_timer_start__hid_bpf(void *timer, int delay, int flags)
 {
 	struct test_async_cb *async_cb;
+	unsigned long long int current_time;
 	int err;
 
 	err = callbacks.async_start(&callbacks, timer, delay, flags);
 	if (err)
 		return err;
 
+	current_time = callbacks.time;
+	callbacks.time += (delay / 1000 / 1000); /* delay is in nanoseconds, we care only about milliseconds */
+
 	async_cb = (struct test_async_cb *)callbacks.helpers_retval;
 	async_cb->cb(async_cb->map, &async_cb->key, async_cb->value);
+
+	/* reset our time to the previous value */
+	callbacks.time = current_time;
 
 	return 0;
 }

@@ -57,6 +57,7 @@ class TestAsyncCb(ctypes.Structure):
 
 @dataclass
 class OutputReport:
+    time: int
     data: Tuple[bytes]
 
 
@@ -77,6 +78,7 @@ class RequestType(Enum):
 
 @dataclass
 class HidRawRequest:
+    time: int
     req_data: Tuple[bytes]
     out_data: Tuple[bytes]
     report_type: ReportType
@@ -143,7 +145,7 @@ class Callbacks(ctypes.Structure):
         data = bytes(c_data)
 
         callbacks = callbacks_p.contents
-        callbacks.private_data.output_reports.append(OutputReport(data))
+        callbacks.private_data.output_reports.append(OutputReport(callbacks.time, data))
         return size
 
     def _hid_bpf_hw_request(callbacks_p, ctx_p, data_p, size, _type, reqtype):
@@ -159,6 +161,7 @@ class Callbacks(ctypes.Structure):
         callbacks = callbacks_p.contents
         callbacks.private_data.hw_requests.append(
             HidRawRequest(
+                callbacks.time,
                 req_data,
                 out_data,
                 ReportType(_type),
