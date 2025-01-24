@@ -8,6 +8,7 @@ from ctypes import (
 from typing import Optional, Tuple, Type, Self
 from dataclasses import dataclass
 from pathlib import Path
+from enum import Enum
 
 import logging
 import ctypes
@@ -40,9 +41,39 @@ class HidBpfCtx(ctypes.Structure):
 
 
 @dataclass
+class OutputReport:
+    data: Tuple[bytes]
+
+
+class ReportType(Enum):
+    HID_INPUT_REPORT = 0
+    HID_OUTPUT_REPORT = 1
+    HID_FEATURE_REPORT = 2
+
+
+class RequestType(Enum):
+    HID_REQ_GET_REPORT = 0x01
+    HID_REQ_GET_IDLE = 0x02
+    HID_REQ_GET_PROTOCOL = 0x03
+    HID_REQ_SET_REPORT = 0x09
+    HID_REQ_SET_IDLE = 0x0A
+    HID_REQ_SET_PROTOCOL = 0x0B
+
+
+@dataclass
+class HidRawRequest:
+    req_data: Tuple[bytes]
+    out_data: Tuple[bytes]
+    report_type: ReportType
+    request_type: RequestType
+
+
+@dataclass
 class PrivateTestData:
     current_ctx: HidBpfCtx = dataclasses.field(default_factory=HidBpfCtx)
     id: int = dataclasses.field(default_factory=lambda: random.randint(0, 0xFFFF))
+    output_reports: list[OutputReport] = dataclasses.field(default_factory=list)
+    hw_requests: list[HidRawRequest] = dataclasses.field(default_factory=list)
 
 
 # see struct test_callbacks
@@ -92,7 +123,9 @@ class Callbacks(ctypes.Structure):
         p2 = ctypes.byref(c_data)
         ctypes.memmove(p2, data_p, size)
         data = bytes(c_data)
-        print(f"hw_output_report with {data}")
+
+        callbacks = callbacks_p.contents
+        callbacks.private_data.output_reports.append(OutputReport(data))
         return size
 
     def _hid_bpf_hw_request(callbacks_p, ctx_p, data_p, size, _type, reqtype):
@@ -102,8 +135,18 @@ class Callbacks(ctypes.Structure):
         c_data = DataArray()
         p2 = ctypes.byref(c_data)
         ctypes.memmove(p2, data_p, size)
-        data = bytes(c_data)
-        print(f"hw_raw_request with {data}")
+        req_data = bytes(c_data)
+        out_data = bytes(c_data)
+
+        callbacks = callbacks_p.contents
+        callbacks.private_data.hw_requests.append(
+            HidRawRequest(
+                req_data,
+                out_data,
+                ReportType(_type),
+                RequestType(reqtype),
+            )
+        )
         return size
 
 
