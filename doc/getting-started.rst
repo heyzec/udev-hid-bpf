@@ -3,6 +3,8 @@
 Getting started
 ===============
 
+If you just want to test a pre-built binary from our CI, please see :ref:`installing_from_ci`.
+
 .. _dependencies:
 
 Dependencies

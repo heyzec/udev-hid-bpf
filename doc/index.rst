@@ -32,6 +32,7 @@ License
    :caption: Contents:
 
    how-it-works
+   installing-from-ci
    getting-started
    tutorial
    filename-conventions
