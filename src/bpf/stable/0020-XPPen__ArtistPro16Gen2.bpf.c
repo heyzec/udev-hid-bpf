@@ -71,14 +71,14 @@ static const __u8 fixed_rdesc[] = {
 	0x26, 0xff, 0x3f,              //   Logical Maximum (16383)           86
 	0x81, 0x42,                    //   Input (Data,Var,Abs,Null)         89
 	0x09, 0x3d,                    //   Usage (X Tilt)                    91
-	0x15, 0x81,                    //   Logical Minimum (-127)            93
-	0x25, 0x7f,                    //   Logical Maximum (127)             95
+	0x15, 0xc4,                    //   Logical Minimum (-60)             93 /* changed from -127 to -60 */
+	0x25, 0x3c,                    //   Logical Maximum (60)              95 /* changed from 127 to 60 */
 	0x75, 0x08,                    //   Report Size (8)                   97
 	0x95, 0x01,                    //   Report Count (1)                  99
 	0x81, 0x02,                    //   Input (Data,Var,Abs)              101
 	0x09, 0x3e,                    //   Usage (Y Tilt)                    103
-	0x15, 0x81,                    //   Logical Minimum (-127)            105
-	0x25, 0x7f,                    //   Logical Maximum (127)             107
+	0x15, 0xc4,                    //   Logical Minimum (-60)             105 /* changed from -127 to -60 */
+	0x25, 0x3c,                    //   Logical Maximum (60)              107 /* changed from 127 to 60 */
 	0x81, 0x02,                    //   Input (Data,Var,Abs)              109
 	0xc0,                          //  End Collection                     111
 	0xc0,                          // End Collection                      112
