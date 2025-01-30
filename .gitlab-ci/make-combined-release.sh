@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 #
 # Script to help create a release tarball from two different
-# compiled versions of udev-hidp-bpf.
+# compiled versions of udev-hid-bpf.
 #
 # The SRCDIR is an installed version of udev-hid-bpf. That install
 # is overwritten with just the rebuilt udev-hid-bpf (bpf.o files are left as-is)

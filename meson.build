@@ -123,7 +123,7 @@ meson.add_devenv(cargo_env)
 
 udev_config = configuration_data()
 # See make_release.sh - if set we leave a placeholder
-# that we can use in install_release.sh
+# that we can use in install.sh
 if get_option('placeholder-udev-rules-file')
     udev_config.set('BINDIR', '@@BINDIR@@')
 else
