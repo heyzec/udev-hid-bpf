@@ -53,7 +53,16 @@ if [ -z "$UDEVDIR" ]; then
   esac
 fi
 
-find ./ -name "*.rules" -exec sed -i "s|@@BINDIR@@|$PREFIX/bin|" {} \;
+# Replace BINDIR with our given prefix but leave a marker in place so
+# if this script is run twice we remove any previously added lines.
+find ./ \
+  -name "*.rules" \
+  -exec \
+    sed -i \
+    -e "/.*#MARKER/d" \
+    -e "s|^#\?\(.*\)\(@@BINDIR@@\)\(.*\)|#\1\2\3\n\1$PREFIX/bin\3 #MARKER|" \
+    {} \;
+
 
 echo "Using sudo to install files into $PREFIX. You may be asked for your password now"
 dryrun_sudo="$DRY_RUN sudo"
