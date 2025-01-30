@@ -40,7 +40,7 @@ MESON_BUILDDIR=$(mktemp -d _builddir.XXXX)
 export MESON_BUILDDIR
 
 # Overwrite just udev-hid-bpf with one compat with this glibc
-export MESON_ARGS="--prefix=$SRCDIR -Dbpfs=[] -Dudevdir=$SRCDIR/lib/udev"
+export MESON_ARGS="--prefix=$SRCDIR -Dbpfs=[] -Dudevdir=$SRCDIR/lib/udev -Dplaceholder-udev-rules-file=true"
 
 "$SCRIPT_DIR"/meson-build.sh --skip-test --run-install
 
