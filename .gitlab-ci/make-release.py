@@ -16,6 +16,7 @@ from pathlib import Path
 import argparse
 import jinja2
 import jinja2.environment
+import os
 import shutil
 import logging
 
@@ -90,7 +91,12 @@ for file in args.source_dir.glob("**/*"):
         hwdb_files.append(ifile)
 
 
-data = {"bpfs": bpfs, "udev_rules": udev_rules, "hwdb_files": hwdb_files}
+data = {
+    "bpfs": bpfs,
+    "udev_rules": udev_rules,
+    "hwdb_files": hwdb_files,
+    "pipeline_url": os.getenv("CI_PIPELINE_URL", "local invocation"),
+}
 
 for template in args.templates:
     template_dir = template.absolute().parent
