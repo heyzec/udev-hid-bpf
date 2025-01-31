@@ -18,6 +18,10 @@
 #undef BPF_PROG
 #define BPF_PROG(name, args...) name(args)
 
+#undef bpf_for
+#define bpf_for(i, start, end) \
+	for (i = (start); i < (end); i++)
+
 typedef int (*hid_bpf_async_callback_t)(void *map, int *key, void *value);
 
 /* below are BPF helpers: they are stored as an enum and
