@@ -489,12 +489,12 @@ make release:
     - mkdir -p tarball_dir
     - tar xf udev-hid-bpf*.tar.xz -C tarball_dir --strip-components=1
     - pushd tarball_dir
-    - ./install.sh --verbose $PREFIX
+    - ./install.sh --verbose --prefix $PREFIX
     - test -e $PREFIX/bin/udev-hid-bpf
     - test -e $PREFIX/lib/udev/rules.d/81-hid-bpf.rules
     - test -e $PREFIX/lib/udev/hwdb.d/81-hid-bpf-testing.hwdb
     - test -e /lib/firmware/hid/bpf/0010-HP__Elite-Presenter.bpf.o
-    - ./uninstall.sh --verbose $PREFIX
+    - ./uninstall.sh --verbose --prefix $PREFIX
     - test ! -e $PREFIX/bin/udev-hid-bpf
     - test ! -e $PREFIX/lib/udev/rules.d/81-hid-bpf.rules
     - test ! -e $PREFIX/lib/udev/hwdb.d/81-hid-bpf-testing.hwdb
