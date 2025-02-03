@@ -61,9 +61,12 @@ fi
 
 echo "Using sudo to remove files from $PREFIX. You may be asked for your password now"
 dryrun_sudo="$DRY_RUN sudo"
+# Any of the following lines can be safely commented out or removed
+# to avoid removing a particular file
 {% for bpf in bpfs %}
 $dryrun_sudo rm -f "$PREFIX/{{bpf.path}}"
 {% endfor %}
+# The following lines are generic and should be left as-is
 {% for udev in udev_rules %}
 $dryrun_sudo rm -f "$UDEVDIR"/udev/rules.d/{{udev.filename}}
 {% endfor %}

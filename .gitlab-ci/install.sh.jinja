@@ -72,9 +72,12 @@ find ./ \
 
 echo "Using sudo to install files into $PREFIX. You may be asked for your password now"
 dryrun_sudo="$DRY_RUN sudo"
+# Any of the following lines can be safely commented out or removed
+# to avoid installing a particular file
 {% for bpf in bpfs %}
 $dryrun_sudo install -D -t "$PREFIX/{{bpf.dir}}" "$SCRIPT_DIR/{{bpf.path}}"
 {% endfor %}
+# The following lines are generic and should be left as-is
 {% for rule in udev_rules %}
 $dryrun_sudo install -D -m 644 -t "$UDEVDIR"/udev/rules.d "$SCRIPT_DIR"/{{rule.path}}
 {% endfor %}
