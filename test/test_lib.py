@@ -86,23 +86,23 @@ class TestXPPenDecoMini4:
         "report,expected",
         [
             # Invalid report descriptor
-            (b"\x02\x01\x02\x03\x04\x05\x06\x07", b"\x02\x01\x02\x03\x04\x05\x06\x07"),
+            ("02 01 02 03 04 05 06 07", "02 01 02 03 04 05 06 07"),
             # Button 1
-            (b"\x06\x00\x05\x00\x00\x00\x00\x00", b"\x06\x01\x00\x00\x00\x00\x00\x00"),
+            ("06 00 05 00 00 00 00 00", "06 01 00 00 00 00 00 00"),
             # Button 2
-            (b"\x06\x00\x08\x00\x00\x00\x00\x00", b"\x06\x02\x00\x00\x00\x00\x00\x00"),
+            ("06 00 08 00 00 00 00 00", "06 02 00 00 00 00 00 00"),
             # Button 3
-            (b"\x06\x04\x00\x00\x00\x00\x00\x00", b"\x06\x04\x00\x00\x00\x00\x00\x00"),
+            ("06 04 00 00 00 00 00 00", "06 04 00 00 00 00 00 00"),
             # Button 4
-            (b"\x06\x00\x2c\x00\x00\x00\x00\x00", b"\x06\x08\x00\x00\x00\x00\x00\x00"),
+            ("06 00 2c 00 00 00 00 00", "06 08 00 00 00 00 00 00"),
             # Button 5
-            (b"\x06\x01\x16\x00\x00\x00\x00\x00", b"\x06\x10\x00\x00\x00\x00\x00\x00"),
+            ("06 01 16 00 00 00 00 00", "06 10 00 00 00 00 00 00"),
             # Button 6
-            (b"\x06\x01\x1d\x00\x00\x00\x00\x00", b"\x06\x20\x00\x00\x00\x00\x00\x00"),
+            ("06 01 1d 00 00 00 00 00", "06 20 00 00 00 00 00 00"),
             # Buttons 3 and 5
-            (b"\x06\x05\x16\x00\x00\x00\x00\x00", b"\x06\x14\x00\x00\x00\x00\x00\x00"),
+            ("06 05 16 00 00 00 00 00", "06 14 00 00 00 00 00 00"),
             # All buttons
-            (b"\x06\x05\x05\x08\x2c\x16\x1d\x00", b"\x06\x3f\x00\x00\x00\x00\x00\x00"),
+            ("06 05 05 08 2c 16 1d 00", "06 3f 00 00 00 00 00 00"),
         ],
     )
     def test_button_events(self, bpf, report, expected):
@@ -116,18 +116,18 @@ class TestTUXEDOSirius16Gen1andGen2:
         "report,expected",
         [
             pytest.param(
-                b"\x01\x00\x00\x68\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
-                b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+                "01 00 00 68 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+                "01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
                 id="single-f13-key-press",
             ),
             pytest.param(
-                b"\x01\x00\x00\x04\x05\x06\x07\x08\x09\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
-                b"\x01\x00\x00\x04\x05\x06\x07\x08\x09\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+                "01 00 00 04 05 06 07 08 09 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+                "01 00 00 04 05 06 07 08 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
                 id="six-keys-and-then-f13-key-down",
             ),
             pytest.param(
-                b"\x01\x00\x00\x68\x68\x68\x68\x68\x68\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
-                b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
+                "01 00 00 68 68 68 68 68 68 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff",
+                "01 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff ff ff ff ff ff fe ff ff ff ff ff ff ff ff ff ff ff ff ff ff",
                 id="edge-case-all-bits-set",
             ),
         ],

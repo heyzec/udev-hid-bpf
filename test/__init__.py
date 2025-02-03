@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from enum import Enum
 
+import binascii
 import logging
 import ctypes
 import os
@@ -445,7 +446,7 @@ class Bpf:
 
     def hid_bpf_device_event(
         self,
-        report: bytes | None = None,
+        report: bytes | str | None = None,
         private_data: PrivateTestData | None = None,
     ) -> None | bytes:
         """
@@ -453,20 +454,30 @@ class Bpf:
 
         If a report is given, it returns the (possibly modified) report.
         Otherwise it returns None.
+
+        If the report is given with a string representation, it returns
+        a string representation as well instead of a byte array.
         """
         if private_data is None:
             private_data = PrivateTestData(bpf=self)
 
         ctx = private_data.current_ctx
 
+        input_is_binary = isinstance(report, bytes) or isinstance(report, bytearray)
+
         if report is not None:
-            allocated_size = int(len(report) / 64 + 1) * 64
-            data = (ctypes.c_uint8 * allocated_size)(*report)
+            binary_report = (
+                report
+                if input_is_binary
+                else binascii.unhexlify(report.replace(" ", ""))
+            )
+            allocated_size = int(len(binary_report) / 64 + 1) * 64
+            data = (ctypes.c_uint8 * allocated_size)(*binary_report)
             callbacks = Callbacks(private_data)
             callbacks.hid_bpf_data = data
             callbacks.hid_bpf_data_sz = allocated_size
             ctx.allocated_size = allocated_size
-            ctx.size = len(report)
+            ctx.size = len(binary_report)
             self.set_callbacks(callbacks)
         else:
             data = None
@@ -481,11 +492,15 @@ class Bpf:
         if report is None:
             return None
         assert data is not None
-        return bytes(data[: ctx.retval])
+
+        if input_is_binary:
+            return bytes(data[: ctx.retval])
+
+        return binascii.hexlify(bytes(data[: ctx.retval]), " ").decode()
 
     def hid_bpf_rdesc_fixup(
         self,
-        rdesc: bytes | None = None,
+        rdesc: bytes | str | None = None,
         private_data: PrivateTestData | None = None,
     ) -> None | bytes:
         """
@@ -493,20 +508,28 @@ class Bpf:
 
         If an rdesc is given, it returns the (possibly modified) rdesc.
         Otherwise it returns None.
+
+        If the rdesc is given with a string representation, it returns
+        a string representation as well instead of a byte array.
         """
         if private_data is None:
             private_data = PrivateTestData(bpf=self)
 
         ctx = private_data.current_ctx
 
+        input_is_binary = isinstance(rdesc, bytes) or isinstance(rdesc, bytearray)
+
         if rdesc is not None:
+            binary_rdesc = (
+                rdesc if input_is_binary else binascii.unhexlify(rdesc.replace(" ", ""))
+            )
             allocated_size = 4096
-            data = (ctypes.c_uint8 * allocated_size)(*rdesc)
+            data = (ctypes.c_uint8 * allocated_size)(*binary_rdesc)
             callbacks = Callbacks(private_data)
             callbacks.hid_bpf_data = data
             callbacks.hid_bpf_data_sz = allocated_size
             ctx.allocated_size = allocated_size
-            ctx.size = len(rdesc)
+            ctx.size = len(binary_rdesc)
             self.set_callbacks(callbacks)
         else:
             data = None
@@ -521,4 +544,8 @@ class Bpf:
         if rdesc is None:
             return None
         assert data is not None
-        return bytes(data[: ctx.retval])
+
+        if input_is_binary:
+            return bytes(data[: ctx.retval])
+
+        return binascii.hexlify(bytes(data[: ctx.retval]), " ").decode()
