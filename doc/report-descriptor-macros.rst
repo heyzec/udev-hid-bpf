@@ -14,7 +14,7 @@ These macros are styled in the output format of `hid-recorder <https://github.co
 
 Below is an annotated extract of an example report descriptor:
 
-.. code:: c
+.. code-block:: c
 
   static const __u8 fixed_rdesc_vendor[] = {
           UsagePage_Digitizers                 // <- set usage page to Digitizer
@@ -43,7 +43,7 @@ Below is an annotated extract of an example report descriptor:
 
 This report descriptor can then be used to wholesale replace the device's report descriptor:
 
-.. code:: c
+.. code-block:: c
 
   SEC(HID_BPF_RDESC_FIXUP)
   int BPF_PROG(my_rdesc_fixup, struct hid_bpf_ctx *hctx)

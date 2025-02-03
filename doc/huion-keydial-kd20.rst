@@ -561,7 +561,7 @@ specific to this device. For the full source, see the
 
 We define our VID/PID and make sure our BPF attaches to that device:
 
-.. code:: c
+.. code-block:: c
 
   #define VID_HUION 0x256C
   #define PID_KEYDIAL_K20 0x0069
@@ -574,7 +574,7 @@ Because our ID is unique we don't have to worry about attaching to the wrong
 device but we still put some safety checks in so we only attach if
 the report descriptor lengths match up:
 
-.. code:: c
+.. code-block:: c
 
   /* see the hid-recorder output */
   #define PAD_REPORT_DESCRIPTOR_LENGTH 135
@@ -625,7 +625,7 @@ Back to our BPF. Our goal is to replace the vendor usages with something
 meaningful that the kernel can handle. Let's do that by composing a report
 descriptor that does what we want - using our convenient macros:
 
-.. code:: c
+.. code-block:: c
 
   #define VENDOR_REPORT_ID 8
   // The length of our vendor report in bytes (the report, not the report descriptor)
@@ -708,7 +708,7 @@ So all we need to do now is to tell the BPF that we want this one as our
 new report descriptor. And we do this by simply memcpy-ing the new report
 descriptor over the old one in the corresponding hook.
 
-.. code:: c
+.. code-block:: c
 
   SEC(HID_BPF_RDESC_FIXUP)
   int BPF_PROG(k20_fix_rdesc, struct hid_bpf_ctx *hctx)
@@ -744,7 +744,7 @@ As said above - because the wheel is on the same bytes as the button masks we wi
 need a workaround for that. And that workaround is to shuffle the bits around in
 the BPF function that is called for each input report:
 
-.. code:: c
+.. code-block:: c
 
   __u32 last_button_state;
 
@@ -1061,7 +1061,7 @@ property is set. huion-switcher will set that property when it switches the
 tablet to vendor mode so if it is present we know we're in vendor mode and the
 firmware nodes are mute anyway.
 
-.. code:: c
+.. code-block:: c
 
   /* Any global prefixed with UDEV_PROP will be set to the value of that udev property.
    * If huion-switcher is run via the provided udev rule it will set the
@@ -1281,7 +1281,7 @@ can be copy/pasted with few changes - we merely need to
 ensure our report lengths match up so we change the
 ``FixedSizeVendorReport()`` additions:
 
-.. code:: c
+.. code-block:: c
 
   static const __u8 fixed_rdesc_pad[] = {
       UsagePage_GenericDesktop
@@ -1322,7 +1322,7 @@ button events.
 So now we need to parse the actual keyboard shortcuts and
 map them to the corresponding button bit.
 
-.. code:: c
+.. code-block:: c
 
   SEC(HID_BPF_DEVICE_EVENT)
   int BPF_PROG(k20_fix_events, struct hid_bpf_ctx *hctx)
