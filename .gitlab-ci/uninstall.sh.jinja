@@ -20,6 +20,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --dry-run)
+      echo "--dry-run given, nothing will be installed and no command is run"
       DRY_RUN="echo"
       shift
       ;;
