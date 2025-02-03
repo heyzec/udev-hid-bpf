@@ -26,7 +26,9 @@ initialized.
 
 ``udev-hid-bpf`` uses a simple name match so a BPF can use any udev property
 it wishes to. For example, some existing Huion BPF programs use a property
-called ``HUION_FIRMWARE_ID`` that is set by an external program::
+called ``HUION_FIRMWARE_ID`` that is set by an external program:
+
+.. code-block:: console
 
   $ udevadm info /sys/bus/hid/devices/0003:256C:0066*/
   P: /devices/pci0000:00/0000:00:14.0/usb1/1-8/1-8.1/1-8.1:1.0/0003:256C:0066.000C
@@ -68,7 +70,9 @@ argument. Values passed via the commandline work identical to
 udev properties (but take precendence over udev properties).
 
 For example, the following invocation overrides the ``NAME`` and ``SUBSYTEM``
-udev property::
+udev property:
+
+.. code-block:: console
 
   $ udev-hid-bpf add --property NAME=MyDevice --property SUBSYTEM=hid /sys/bus/hid/devices/0003:256C:0066
 

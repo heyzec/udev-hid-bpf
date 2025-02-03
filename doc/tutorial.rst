@@ -14,7 +14,9 @@ Identifying the device
 Let's assume we have a mouse that needs some fixes, for example a mouse that
 keeps sending events for a button that doesn't even exist on the device.
 
-There is a page on :ref:`matching_programs` but for now we'll use the tool::
+There is a page on :ref:`matching_programs` but for now we'll use the tool:
+
+.. code-block:: console
 
    $ udev-hid-bpf list-devices
    /sys/bus/hid/devices/0003:045E:07A5.0001
@@ -62,7 +64,9 @@ This macro will identify our device for us in the BPF program.
 Scaffolding
 -----------
 
-Let's create the file and fill it with enough information to compile::
+Let's create the file and fill it with enough information to compile:
+
+.. code-block:: console
 
   $ touch ./src/bpf/testing/0010-vendor__mymouse.bpf.c
 
@@ -133,7 +137,9 @@ Then we need to add the file name to the list of files meson tracks in
   ]
 
 This doesn't do anything but it should be buildable, can be installed and
-we can attempt to load it manually::
+we can attempt to load it manually:
+
+.. code-block:: console
 
   $ meson setup builddir
   $ meson compile -C builddir
@@ -144,7 +150,9 @@ we can attempt to load it manually::
 
 
 Because the BPF program is "pinned" it will remain even after the loading process terminates.
-And indeed, the BPF program shows up in the bpffs::
+And indeed, the BPF program shows up in the bpffs:
+
+.. code-block:: console
 
   $ sudo tree /sys/fs/bpf/hid/
     /sys/fs/bpf/hid/
@@ -152,7 +160,9 @@ And indeed, the BPF program shows up in the bpffs::
         └── 0010-vendor__mymouse_bpf
             └── ignore_button
 
-And we can remove it again (so we can re-add it later)::
+And we can remove it again (so we can re-add it later):
+
+.. code-block:: console
 
   $ sudo udev-hid-bpf --verbose remove /sys/bus/hid/devices/0003:045E:07A5.0001
 
@@ -213,7 +223,9 @@ we need to ignore those. So our ``probe()`` changes to check exactly that:
 
 Now, as it turns out we actually stop loading the program now. Why? Because the device
 path we provided to the ``udev-hid-bpf`` tool is the Keyboard device, not the Mouse.
-Passing in the other interface (with the ``0002`` suffix) works::
+Passing in the other interface (with the ``0002`` suffix) works:
+
+.. code-block:: console
 
   $ sudo udev-hid-bpf --verbose add /sys/bus/hid/devices/0003:045E:07A5.0001 builddir/src/bpf/0010-vendor__mymouse.bpf.o
   DEBUG - loading BPF object at "builddir/src/bpf/0010-vendor__mymouse.bpf.o"
@@ -230,7 +242,9 @@ Passing in the other interface (with the ``0002`` suffix) works::
 
 This indicates our probe is working correctly. To avoid this issue in the
 future we can skip the device path altogether and rely on ``udev-hid-bpf`` to
-find all matching devices::
+find all matching devices:
+
+.. code-block:: console
 
   $ sudo udev-hid-bpf --verbose add - builddir/src/bpf/0010-vendor__mymouse.bpf.o
 
@@ -336,7 +350,9 @@ Bringing it all together
 Once the BPF program works as expected, :ref:`installing it <installation>` sets up
 the systemd hwdb and the udev rules for the program to be loaded automatically whenever
 the device is plugged in. This can be verified by checking wether the
-``HID_BPF_n`` property exists on the device::
+``HID_BPF_n`` property exists on the device:
+
+.. code-block:: console
 
   $ udevadm info /sys/bus/hid/devices/0003:045E:07A5*
   P: /devices/pci0000:00/0000:00:14.0/usb1/1-4/1-4:1.0/0003:045E:07A5.0022

@@ -8,14 +8,18 @@ This tool supports multiple ways of matching a BPF program to a HID device:
 Manual loading
 --------------
 
-Users can manually attach a HID-BPF program to a device::
+Users can manually attach a HID-BPF program to a device:
+
+.. code-block:: console
 
    $ sudo udev-hid-bpf add /sys/bus/hid/devices/0003:05F3:0405 trace_hid_events.bpf.o
    $ sudo udev-hid-bpf add /sys/bus/hid/devices/0003:05F3:0405 /path/to/my-hack.bpf.o
 
 Multiple devices and object files can be provided by separating devices and BPF
 object files with a literal ``-``. This gives us a convenient shortcut, useful
-especially during development::
+especially during development:
+
+.. code-block:: console
 
    $ sudo udev-hid-bpf add - builddir/src/bpf/0010-Foo__Bar.bpf.o
 
@@ -24,7 +28,9 @@ By leaving the device list empty (``-`` is the first argument to ``add``),
 <matching_programs_metadata>` compiled into the given BPF programs.
 
 Note that the filename does not need to be a full path. The list of available
-BPF programs can be shown with::
+BPF programs can be shown with:
+
+.. code-block:: console
 
    $ udev-hid-bpf list-bpf-programs
 
@@ -77,7 +83,9 @@ For the curious, there is a page on :ref:`metadata` that explains how these meta
 embedded in the resulting BPF object.
 
 The easiest way to obtain the metadata is to use the
-``udev-hid-bpf list-devices`` command::
+``udev-hid-bpf list-devices`` command:
+
+.. code-block:: console
 
    $ udev-hid-bpf list-devices
    /sys/bus/hid/devices/0003:045E:07A5.0001
@@ -112,7 +120,9 @@ As shown above, many devices export multiple HID interfaces. See :ref:`run_time_
 on how to handle this situation.
 
 Alternatively, the bus, group, vendor ID and product ID (``b``, ``g``, ``v``, ``p``)
-can be extracted from the modalias of the device as provided by the kernel::
+can be extracted from the modalias of the device as provided by the kernel:
+
+.. code-block:: console
 
    $ cat /sys/bus/hid/devices/0003:04D9:A09F.0009/modalias
    hid:b0003g0001v000004D9p0000A09F
