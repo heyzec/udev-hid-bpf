@@ -64,7 +64,10 @@ tool can set that property too.
 Analysing the HID report descriptors
 ------------------------------------
 
-Let's plug in the K20 and check what hid-recorder shows us::
+Let's plug in the K20 and check what hid-recorder shows us:
+
+.. code-block:: console
+   :emphasize-lines: 4,5,6
 
     $ sudo hid-recorder
     # Available devices:
@@ -75,7 +78,10 @@ Let's plug in the K20 and check what hid-recorder shows us::
     # Select the device event number [0-9]:
 
 Huion devices always export three hidraw nodes. Let's have a look at the first
-one::
+one:
+
+.. code-block:: console
+   :emphasize-lines: 15
 
     $ sudo hid-recorder /dev/hidraw1
     # HUION Huion Keydial_K20
@@ -111,7 +117,9 @@ merely says that "reports are 12 bytes long with vendor-private data" - such
 reports are ignored by the kernel.  However, until the device is switched into
 vendor mode no such reports are sent anyway.
 
-There are two other hidraw nodes so let's look at those::
+There are two other hidraw nodes so let's look at those:
+
+.. code-block:: console
 
     $ sudo hid-recorder /dev/hidraw2
     # HUION Huion Keydial_K20
@@ -239,7 +247,9 @@ Note the summary printed by hid-recorder: we have 3 different input reports,
   - Report ID 5 is like a mouse with 5 buttons and a wheel.
 
 
-Finally we have a third hidraw node::
+Finally we have a third hidraw node:
+
+.. code-block:: console
 
     $ sudo hid-recorder /dev/hidraw3
     # HUION Huion Keydial_K20
@@ -347,11 +357,14 @@ Let's summarise what we have found so far:
 Analyzing the HID Reports in firmware mode
 ------------------------------------------
 
-Let's observe some HID Reports (i.e. events) from the device.
-Pressing and releasing the top-left button on the numpad-like set produces this::
+Let's observe some HID Reports (i.e. events) from the device:
+
+.. code-block:: console
 
     $ sudo hid-recorder /dev/hidraw2
-    ...
+
+Pressing and releasing the top-left button on the numpad-like set produces this::
+
     # ▓  Report ID: 3 /
     # ▓               Keyboard LeftControl:     0 |Keyboard LeftShift:     0 |Keyboard LeftAlt:     0 |Keyboard Left GUI:     0 |
     #                 Keyboard RightControl:     0 |Keyboard RightShift:     0 |Keyboard RightAlt:     0 |Keyboard Right GUI:     0 |
@@ -367,6 +380,7 @@ Pressing and releasing the top-left button on the numpad-like set produces this:
 As per above, hidraw2's report ID 3 is basically a keyboard with modifiers.
 Modifiers are 1 bit per modifier and then we have 6 bytes for actual keys
 (suggesting we could have up to 6 keys down simultaneously).
+
 The event we get is a ``k`` - note a modifier state of zero and ``0x0e`` for
 ``Keyboard K:    14``. Pressing the other buttons yields similar events
 with keys ``k``, ``g``, ``l``, ``Del``,  ``Space``, etc. The second row from bottom
@@ -390,8 +404,7 @@ Pressing multiple buttons together fills in the buttons in-order over the last
 
 How about the dial and the little button inside? They send reports on the other hidraw node::
 
-    $ sudo hid-recorder /dev/hidraw2
-    ...
+
     # ▓  Report ID: 17 /
     # ▓               Button 1:     0 |Touch:     0
     # ▓               Dial:     1
@@ -425,7 +438,9 @@ In summary, we now know what all events do in firmware mode:
 - the little round button inside the dial sends (unreliable) tablet button events
 
 The kernel ignores events from the dial/dial button altogether and we only get
-two event nodes::
+two event nodes:
+
+.. code-block:: console
 
     $ sudo libinput record
     ...
@@ -445,7 +460,9 @@ not only the firmware ID string but also switches the tablet to vendor mode.
 From then until unplug, the device will only send events via the vendor hidraw
 node and the other two hidraw nodes no longer send events.
 
-The `huion-switcher <https://github.com/whot/huion-switcher>`_ does exactly this. Running it prints::
+The `huion-switcher <https://github.com/whot/huion-switcher>`_ does exactly this. Running it prints:
+
+.. code-block:: console
 
     $ sudo huion-switcher --all
     HUION_FIRMWARE_ID="HUION_T21h_230511"
@@ -464,7 +481,9 @@ Analysing the HID Reports in vendor mode
 ----------------------------------------
 
 Now that device is in vendor mode let's check what happens on the top-left
-button on the hidraw1 vendor node. ::
+button on the hidraw1 vendor node. :
+
+.. code-block:: console
 
     $ sudo hid-recorder /dev/hidraw1
     # HUION Huion Keydial_K20
@@ -544,7 +563,9 @@ Overwriting the vendor HID Report Descriptor
 
 The data in the vendor HID report is reliable, so if we can make the kernel
 parse it, we can get reliable data from the device. For this we need
-``udev-hid-bpf``::
+``udev-hid-bpf``:
+
+.. code-block:: console
 
   $ git clone https://gitlab.freedesktop.org/libevdev/udev-hid-bpf.git
   $ cd udev-hid-bpf
@@ -562,12 +583,13 @@ specific to this device. For the full source, see the
 We define our VID/PID and make sure our BPF attaches to that device:
 
 .. code-block:: c
+  :emphasize-lines: 5
 
   #define VID_HUION 0x256C
   #define PID_KEYDIAL_K20 0x0069
 
   HID_BPF_CONFIG(
-	  HID_DEVICE(BUS_USB, HID_GROUP_GENERIC, VID_HUION, PID_KEYDIAL_K20),
+     HID_DEVICE(BUS_USB, HID_GROUP_GENERIC, VID_HUION, PID_KEYDIAL_K20),
   );
 
 Because our ID is unique we don't have to worry about attaching to the wrong
@@ -600,10 +622,10 @@ the report descriptor lengths match up:
 Now let's run this - it won't do anything but we can get our commandline history sorted.
 The hidraw nodes will change as we load/unload the BPF so let's find the path to the device.
 
-::
+.. code-block:: console
 
     $ ls -l /sys/class/hidraw/hidraw1 -> ../../devices/pci0000:00/0000:00:14.0/usb1/1-4/1-4:1.0/0003:256C:0069.0042/hidraw/hidraw1
-    # Note this terminates at 0069
+    # Note that HIDDEVICE terminates at 0069
     $ export HIDDEVICE=/sys/devices/pci0000:00/0000:00:14.0/usb1/1-4/1-4:1.0/0003:256C:0069
     $ cd udev-hid-bpf
     $ meson compile -C builddir
@@ -709,6 +731,7 @@ new report descriptor. And we do this by simply memcpy-ing the new report
 descriptor over the old one in the corresponding hook.
 
 .. code-block:: c
+  :emphasize-lines: 12
 
   SEC(HID_BPF_RDESC_FIXUP)
   int BPF_PROG(k20_fix_rdesc, struct hid_bpf_ctx *hctx)
@@ -809,11 +832,16 @@ the BPF function that is called for each input report:
   };
 
 
-And that's it! I if we load this BPF program and run hid-recorder against
+And that's it! If we load this BPF program and run hid-recorder against
 our hidraw node (which will have changed number as changing an report descriptor
-re-creates the device)::
+re-creates the device):
+
+.. code-block:: console
 
   $ sudo hid-recorder /dev/hidraw4
+
+::
+
   # HUION Huion Keydial_K20
   # Report descriptor length: 102 bytes
   #   0x05, 0x01,                    // Usage Page (Generic Desktop)              0
@@ -1136,7 +1164,9 @@ Now that our device works fine we can `Add a new device to libwacom
 make our device show up with the correct properties in the various GUI
 configuration programs like GNOME Settings.
 
-First, let's verify the expected::
+First, let's verify the expected:
+
+.. code-block:: console
 
     $ libwacom-list-local-devices
     /dev/input/event20 is a tablet but not supported by libwacom
@@ -1148,7 +1178,7 @@ repository. This repo keeps a record of the various devices so the
 maintainers can (in the future) track down bugs or look up missing features for
 devices.
 
-::
+.. code-block:: console
 
     $ git clone https://github.com/linuxwacom/wacom-hid-descriptors
     $ cd wacom-hid-descriptors
@@ -1180,7 +1210,9 @@ that issue URL we can use it in our ``.tablet`` file.
 
 Next we find an existing device that's similar to ours, for example the `Wacom
 EK Remote <https://github.com/linuxwacom/libwacom/blob/master/data/wacom-ek-remote.tablet>`_.
-So we copy it and start editing it::
+So we copy it and start editing it:
+
+.. code-block:: console
 
    $ git clone https://github.com/linuxwacom/libwacom
    $ meson setup builddir && meson compile -C builddir
@@ -1228,10 +1260,12 @@ case we need to modify the file to this ::
 
 Then we need to fire up ``inkscape`` to create the
 ``data/layouts/huion-keydial-kd20.svg`` file. As with the tablet
-file it's easier to copy an existing file and modify it::
+file it's easier to copy an existing file and modify it:
+
+.. code-block:: console
 
    $ cp data/layouts/wacom-ek-remote.svg data/layouts/huion-keydial-k20.svg
-   $ sed -i 's|Ring|Dial|` data/layouts/huion-keydial-k20.svg
+   $ sed -i 's|Ring|Dial|' data/layouts/huion-keydial-k20.svg
    $ inscape data/layouts/huion-keydial-k20.svg
    $ meson test -C builddir
 
@@ -1242,7 +1276,9 @@ IDs and classes via a sed before editing is the simplest way to go about it.
 
 And now we check if this file gets picked up correctly with the
 in-tree ``list-local-devices`` tool (which uses the git
-repo's ``data/`` directory)::
+repo's ``data/`` directory):
+
+.. code-block:: console
 
     $ ./build/list-local-devices
     devices:
