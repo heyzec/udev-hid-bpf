@@ -8,7 +8,7 @@ from ctypes import (
 from typing import Optional, Tuple, Type, Self
 from dataclasses import dataclass
 from pathlib import Path
-from enum import Enum
+from enum import IntEnum
 
 import binascii
 import logging
@@ -62,13 +62,13 @@ class OutputReport:
     data: Tuple[bytes]
 
 
-class ReportType(Enum):
+class ReportType(IntEnum):
     HID_INPUT_REPORT = 0
     HID_OUTPUT_REPORT = 1
     HID_FEATURE_REPORT = 2
 
 
-class RequestType(Enum):
+class RequestType(IntEnum):
     HID_REQ_GET_REPORT = 0x01
     HID_REQ_GET_IDLE = 0x02
     HID_REQ_GET_PROTOCOL = 0x03

@@ -9,7 +9,7 @@ from ctypes import (
 )
 from typing import Optional, Tuple, Type, Self
 from dataclasses import dataclass
-from enum import Enum
+from enum import IntEnum
 
 import ctypes
 import pytest
@@ -71,7 +71,7 @@ class BtfType(ctypes.Structure):
         return self.info >> 31
 
 
-class BtfKind(Enum):
+class BtfKind(IntEnum):
     BTF_KIND_UNKN = 0  # Unknown
     BTF_KIND_INT = 1  # Integer
     BTF_KIND_PTR = 2  # Pointer
@@ -316,7 +316,7 @@ class Btf:
 
         m_type = BtfType.from_address(m_type_p)
         m_type_name = libbpf.btf__name_by_offset(btf, m_type.name_off)
-        kind = BtfKind(m_type.kind)
+        kind = m_type.kind
 
         if kind == BtfKind.BTF_KIND_UNKN:
             return None
@@ -475,7 +475,7 @@ class Btf:
 
         m_type_p = libbpf.btf__type_by_id(btf, type_id)
         m_type = BtfType.from_address(m_type_p)
-        kind = BtfKind(m_type.kind)
+        kind = m_type.kind
 
         assert kind == BtfKind.BTF_KIND_DATASEC
 
