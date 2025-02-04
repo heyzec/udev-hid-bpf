@@ -72,26 +72,26 @@ class BtfType(ctypes.Structure):
 
 
 class BtfKind(IntEnum):
-    BTF_KIND_UNKN = 0  # Unknown
-    BTF_KIND_INT = 1  # Integer
-    BTF_KIND_PTR = 2  # Pointer
-    BTF_KIND_ARRAY = 3  # Array
-    BTF_KIND_STRUCT = 4  # Struct
-    BTF_KIND_UNION = 5  # Union
-    BTF_KIND_ENUM = 6  # Enumeration up to 32-bit values
-    BTF_KIND_FWD = 7  # Forward
-    BTF_KIND_TYPEDEF = 8  # Typedef
-    BTF_KIND_VOLATILE = 9  # Volatile
-    BTF_KIND_CONST = 10  # Const
-    BTF_KIND_RESTRICT = 11  # Restrict
-    BTF_KIND_FUNC = 12  # Function
-    BTF_KIND_FUNC_PROTO = 13  # Function Proto
-    BTF_KIND_VAR = 14  # Variable
-    BTF_KIND_DATASEC = 15  # Section
-    BTF_KIND_FLOAT = 16  # Floating point
-    BTF_KIND_DECL_TAG = 17  # Decl Tag
-    BTF_KIND_TYPE_TAG = 18  # Type Tag
-    BTF_KIND_ENUM64 = 19  # Enumeration up to 64-bit values
+    UNKN = 0  # Unknown
+    INT = 1  # Integer
+    PTR = 2  # Pointer
+    ARRAY = 3  # Array
+    STRUCT = 4  # Struct
+    UNION = 5  # Union
+    ENUM = 6  # Enumeration up to 32-bit values
+    FWD = 7  # Forward
+    TYPEDEF = 8  # Typedef
+    VOLATILE = 9  # Volatile
+    CONST = 10  # Const
+    RESTRICT = 11  # Restrict
+    FUNC = 12  # Function
+    FUNC_PROTO = 13  # Function Proto
+    VAR = 14  # Variable
+    DATASEC = 15  # Section
+    FLOAT = 16  # Floating point
+    DECL_TAG = 17  # Decl Tag
+    TYPE_TAG = 18  # Type Tag
+    ENUM64 = 19  # Enumeration up to 64-bit values
 
 
 # /* BTF_KIND_STRUCT and BTF_KIND_UNION are followed
@@ -318,14 +318,14 @@ class Btf:
         m_type_name = libbpf.btf__name_by_offset(btf, m_type.name_off)
         kind = m_type.kind
 
-        if kind == BtfKind.BTF_KIND_UNKN:
+        if kind == BtfKind.UNKN:
             return None
 
-        elif kind == BtfKind.BTF_KIND_INT:
+        elif kind == BtfKind.INT:
             # basic type in C
             return btf_to_ctypes[m_type_name]
 
-        elif kind == BtfKind.BTF_KIND_PTR:
+        elif kind == BtfKind.PTR:
             # pointer: if we get a new type behind that pointer, the
             # new type will not be recursively populated
             val_type = self.get_type(name, m_type.type, from_pointer=True)
@@ -336,12 +336,12 @@ class Btf:
                 return val_type
             return ctypes.POINTER(val_type)
 
-        elif kind == BtfKind.BTF_KIND_ARRAY:
+        elif kind == BtfKind.ARRAY:
             # int[length]
             array_info = BtfArray.from_address(m_type_p + ctypes.sizeof(BtfType))
             return self.get_type(name, array_info.type) * array_info.nelems
 
-        elif kind in [BtfKind.BTF_KIND_STRUCT, BtfKind.BTF_KIND_UNION]:
+        elif kind in [BtfKind.STRUCT, BtfKind.UNION]:
             # recursively go down the struct or union if we are not coming
             # from a pointer
             name = m_type_name.decode()
@@ -355,11 +355,7 @@ class Btf:
 
             elif cls is None:
                 # new struct/union, allocate a new class
-                parent = (
-                    ctypes.Structure
-                    if kind == BtfKind.BTF_KIND_STRUCT
-                    else ctypes.Union
-                )
+                parent = ctypes.Structure if kind == BtfKind.STRUCT else ctypes.Union
                 camelCaseName = "".join([word.capitalize() for word in name.split("_")])
                 cls = types.new_class(camelCaseName, (parent,))
                 cls.cname = name
@@ -407,28 +403,28 @@ class Btf:
 
             return cls
 
-        elif kind == BtfKind.BTF_KIND_ENUM:
+        elif kind == BtfKind.ENUM:
             # enums are translated to int, long, etc based on the size parameter
             size = m_type.size * 8
             return getattr(ctypes, f"c_uint{size}")
 
-        elif kind == BtfKind.BTF_KIND_FWD:
+        elif kind == BtfKind.FWD:
             # Forward are types that are not loaded yet, so we can't
             # type them
             return None
 
-        elif kind == BtfKind.BTF_KIND_TYPEDEF:
+        elif kind == BtfKind.TYPEDEF:
             # typedefs are like int, but we might have specifics in ctypes,
             # so look in btf_to_ctypes first.
             return btf_to_ctypes.get(
                 m_type_name, self.get_type(m_type_name, m_type.type)
             )
 
-        elif kind in [BtfKind.BTF_KIND_VOLATILE, BtfKind.BTF_KIND_CONST]:
+        elif kind in [BtfKind.VOLATILE, BtfKind.CONST]:
             # modifier, just forward the child type
             return self.get_type(name, m_type.type, from_pointer)
 
-        elif kind == BtfKind.BTF_KIND_FUNC_PROTO:
+        elif kind == BtfKind.FUNC_PROTO:
             ret_type = self.get_type(name, m_type.type)
             ARGS = BtfParam * m_type.vlen
             args = ARGS.from_address(m_type_p + ctypes.sizeof(BtfType))
@@ -477,7 +473,7 @@ class Btf:
         m_type = BtfType.from_address(m_type_p)
         kind = m_type.kind
 
-        assert kind == BtfKind.BTF_KIND_DATASEC
+        assert kind == BtfKind.DATASEC
 
         if m_type.vlen == 0:
             return []

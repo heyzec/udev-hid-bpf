@@ -63,18 +63,18 @@ class OutputReport:
 
 
 class ReportType(IntEnum):
-    HID_INPUT_REPORT = 0
-    HID_OUTPUT_REPORT = 1
-    HID_FEATURE_REPORT = 2
+    INPUT = 0
+    OUTPUT = 1
+    FEATURE = 2
 
 
 class RequestType(IntEnum):
-    HID_REQ_GET_REPORT = 0x01
-    HID_REQ_GET_IDLE = 0x02
-    HID_REQ_GET_PROTOCOL = 0x03
-    HID_REQ_SET_REPORT = 0x09
-    HID_REQ_SET_IDLE = 0x0A
-    HID_REQ_SET_PROTOCOL = 0x0B
+    GET_REPORT = 0x01
+    GET_IDLE = 0x02
+    GET_PROTOCOL = 0x03
+    SET_REPORT = 0x09
+    SET_IDLE = 0x0A
+    SET_PROTOCOL = 0x0B
 
 
 @dataclass
