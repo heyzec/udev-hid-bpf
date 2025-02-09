@@ -8,6 +8,7 @@ tracing_sources = [
     '0020-XPPen__ArtistPro16Gen2.bpf.c',
     '0010-Huion__KeydialK20.bpf.c',
     '0010-TUXEDO__Sirius-16-Gen1-and-Gen2.bpf.c',
+    '0010-Logitech__SpaceNavigator.bpf.c',
 ]
 
 # 'sources' are BPF programs only compatible with
