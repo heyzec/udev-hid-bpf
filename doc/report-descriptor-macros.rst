@@ -65,13 +65,20 @@ to make the device work without having to change the actual HID reports in the B
 Enforcing the right HID Report size
 -----------------------------------
 
-However there is a drawback: the kernel requires that the returned HID Report
-Descriptor describes **at least one HID Report** that is the same size as the
-original HID Report Descriptor describes.
-In other words, if the original HID Report Descriptor describes a report of size 11 the fixed
-HID Report Descriptor **must** include at least one report that is of size 11.
+However there is a drawback: the kernel discards any any HID reports that are
+larger than the largest report in the HID report descriptor. Thus a modified
+HID Report Descriptor must include **at least one HID Report** that is (at
+least) the same size as the **largest** report in the original HID Report
+Descriptor.
+
+In other words, if the original HID Report Descriptor describes three
+reports of sizes 8, 16 and 20 the fixed HID Report Descriptor **must** include
+at least one report that is of size 20.
 
 This can easily be achieved with the ``FixedSizeVendorReport(len)`` helper macro as shown above.
 This macro will add one additional vendor-specific HID Report to the HID Report Descriptor with
-the given size. This HID Report will be ignored by the kernel but serves to guarantee our BPF
-is handled correctly.
+the given size in bytes. This HID Report will be ignored by the kernel but
+guarantees HID reports are not immediately discarded before the BPF program gets to look at them.
+The ``FixedSizeVendorReport(len)`` macro must not be used more than once per
+report descriptor and should not be larger than necessary
+to avoid unnecessary buffer allocations in the kernel.
