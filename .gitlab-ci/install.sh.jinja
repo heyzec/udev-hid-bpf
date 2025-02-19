@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: install.sh [-v|--verbose] [--dry-run] [--udevdir /etc/] [--prefix $PREFIX]
+# Usage: install.sh [-v|--verbose] [--dry-run] [--list] [--udevdir /etc/] [--prefix $PREFIX]
 #
 # Description:
 #     Installs the BPF programs known to this script into the prefix and
@@ -14,6 +14,7 @@
 # Options:
 #     --verbose  ... print debug output
 #     --dry-run  ... only print commands, do not install
+#     --list     ... print the BPF files this script can install
 #     --prefix   ... prefix for all files (default: /usr/local)
 #     --udevdir  ... path to the udev directory to install rules and hwdb files in
 
@@ -43,6 +44,12 @@ while [[ $# -gt 0 ]]; do
       echo "--dry-run given, nothing will be installed and no command is run"
       DRY_RUN="echo"
       shift
+      ;;
+    --list)
+      for bpf in "${BPFS[@]}"; do
+        echo "$bpf"
+      done
+      exit 0
       ;;
     --prefix)
       PREFIX=$2
