@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: install.sh [-v|--verbose] [--dry-run] [--list] [--udevdir /etc/] [--prefix $PREFIX] [GLOB]
+# Usage: install.sh [-v|--verbose] [--dry-run] [--interactive] [--list] [--udevdir /etc/] [--prefix $PREFIX] [GLOB]
 #
 # Description:
 #     Installs the BPF programs known to this script into the prefix and
@@ -18,6 +18,7 @@
 # Options:
 #     --verbose  ... print debug output
 #     --dry-run  ... only print commands, do not install
+#     --interactive  ask for confirmation for each BPF to install
 #     --list     ... print the BPF files this script can install
 #     --prefix   ... prefix for all files (default: /usr/local)
 #     --udevdir  ... path to the udev directory to install rules and hwdb files in
@@ -39,6 +40,10 @@ while [[ $# -gt 0 ]]; do
     --help)
       usage
       exit 0
+      ;;
+    --interactive)
+      INTERACTIVE="y"
+      shift;
       ;;
     --verbose|-v)
       set -x
@@ -113,7 +118,12 @@ dryrun_sudo="$DRY_RUN sudo"
 {% for bpf in bpfs %}
 # shellcheck disable=SC2053
 if [[ -z "$GLOB" || "{{bpf.filename}}" = $GLOB ]]; then
-  $dryrun_sudo install -D -t "$PREFIX/{{bpf.dir}}" "$SCRIPT_DIR/{{bpf.path}}"
+  if [[ -n "$INTERACTIVE" ]]; then
+    read -rp "Install {{bpf.filename}}? [y/N] " INSTALL_INTERACTIVE
+  fi
+  if [[ -z "$INTERACTIVE" || $INSTALL_INTERACTIVE = [yY] ]]; then
+    $dryrun_sudo install -D -t "$PREFIX/{{bpf.dir}}" "$SCRIPT_DIR/{{bpf.path}}"
+  fi
 fi
 {% endfor %}
 # The following lines are generic and should be left as-is

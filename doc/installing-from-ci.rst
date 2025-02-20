@@ -44,20 +44,29 @@ unpack it:
    $ cd udev-hid-bpf-*/
 
 The tarball provides a simple ``install.sh`` script that will install everything for you. This
-script provides a ``--dry-run`` option to only print what it's about to do:
+script provides a ``--dry-run`` option to only print what it's about to do and an ``--interactive``
+option to prompt for each file:
 
 .. code-block:: console
 
-   $ ./install.sh --dry-run
+   $ ./install.sh --dry-run --interactive
    --dry-run given, nothing will be installed and no command is run
    Using sudo to install files into /usr/local. You may be asked for your password now
+   Install 0020-Huion__Kamvas-Pro-19.bpf.o? [y/N] y
    sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0020-Huion__Kamvas-Pro-19.bpf.o
+   Install 0019-Huion__Kamvas-Pro-19.bpf.o? [y/N] y
    sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0019-Huion__Kamvas-Pro-19.bpf.o
+   Install 0020-XPPen__ArtistPro16Gen2.bpf.o? [y/N] y
    sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0020-XPPen__ArtistPro16Gen2.bpf.o
+   Install 0019-XPPen__ArtistPro16Gen2.bpf.o? [y/N] y
    sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0019-XPPen__ArtistPro16Gen2.bpf.o
+   Install 0010-Huion__KeydialK20.bpf.o? [y/N] y
    sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0010-Huion__KeydialK20.bpf.o
+   Install 0009-Huion__KeydialK20.bpf.o? [y/N] y
    sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0009-Huion__KeydialK20.bpf.o
+   Install 0010-TUXEDO__Sirius-16-Gen1-and-Gen2.bpf.o? [y/N] y
    sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0010-TUXEDO__Sirius-16-Gen1-and-Gen2.bpf.o
+   Install 0009-TUXEDO__Sirius-16-Gen1-and-Gen2.bpf.o? [y/N] y
    sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0009-TUXEDO__Sirius-16-Gen1-and-Gen2.bpf.o
    sudo install -D -m 644 -t /etc/udev/rules.d /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/_inst/etc/udev/rules.d/81-hid-bpf.rules
    sudo install -D -m 644 -t /etc/udev/rules.d /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/udev/rules.d/81-hid-bpf.rules
@@ -66,7 +75,8 @@ script provides a ``--dry-run`` option to only print what it's about to do:
    sudo udevadm control --reload
    sudo systemd-hwdb update
 
-Or if you want to limit the BPF programs files to install, use a **quoted** glob:
+To install all files, simply leave out the ``--interactive`` option and/or
+if you want to limit the BPF programs files to install, use a **quoted** glob:
 
 .. code-block:: console
 
@@ -148,11 +158,12 @@ The ``install.sh`` script will also install ``udev-hid-bpf`` itself (required as
 The default prefix is ``/usr/local`` and all files will be installed under that
 prefix. The exception are udev rules which will be installed in ``/etc``.
 
-Keep the directory around until testing is complete, you can uninstall it all with:
+Keep the directory around until testing is complete, you can uninstall it all with
+our ``uinstall.sh`` script which takes the same options as ``install.sh``:
 
 .. code-block:: console
 
-   $ ./uninstall.sh --dry-run
+   $ ./uninstall.sh --dry-run --interactive
    ...
    $ ./uninstall.sh
    ...
