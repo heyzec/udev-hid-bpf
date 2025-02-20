@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: uninstall.sh [-v|--verbose] [--dry-run] [--list] [--udevdir /etc/] [--prefix $PREFIX]
+# Usage: uninstall.sh [-v|--verbose] [--dry-run] [--list] [--udevdir /etc/] [--prefix $PREFIX] [GLOB]
 #
 # Description:
 #     Uninstalls the BPF programs and udev rules previously installed by install.sh.
@@ -8,6 +8,11 @@
 #     provided to install.sh.
 #
 #     After running this script, unplug and re-plug the device.
+#
+# Arguments:
+#     GLOB       ... An optional shell glob to limit the number of BPF programs
+#                    to uninstall. Note that this glob needs to be in quotes, e.g. "*XPPen*".
+#                    If omitted, all BPF programs in this tarball are uninstalled.
 #
 # Options:
 #     --verbose  ... print debug output
@@ -67,9 +72,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+GLOB=""
+
 if [ $# -gt 0 ]; then
-  usage
-  exit 1
+  if [ $# -gt 1 ]; then
+    usage
+    exit 1
+  fi
+  GLOB=$1
+  shift
 fi
 
 set -e
@@ -90,7 +101,10 @@ dryrun_sudo="$DRY_RUN sudo"
 # Any of the following lines can be safely commented out or removed
 # to avoid removing a particular file
 {% for bpf in bpfs %}
-$dryrun_sudo rm -f "$PREFIX/{{bpf.path}}"
+# shellcheck disable=SC2053
+if [[ -z "$GLOB" || "{{bpf.filename}}" = $GLOB ]]; then
+  $dryrun_sudo rm -f "$PREFIX/{{bpf.path}}"
+fi
 {% endfor %}
 # The following lines are generic and should be left as-is
 {% for udev in udev_rules %}

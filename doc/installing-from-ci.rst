@@ -66,9 +66,26 @@ script provides a ``--dry-run`` option to only print what it's about to do:
    sudo udevadm control --reload
    sudo systemd-hwdb update
 
-.. note:: ``install.sh`` will install all BPF files. To only install specific files please
-          edit the ``install.sh`` script and remove or comment out the lines
-          corresponding to the other bpf files.
+Or if you want to limit the BPF programs files to install, use a **quoted** glob:
+
+.. code-block:: console
+
+   $ ./install.sh --dry-run "*Huion*"
+   --dry-run given, nothing will be installed and no command is run
+   Using sudo to install files into /usr/local. You may be asked for your password now
+   sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0020-Huion__Kamvas-Pro-19.bpf.o
+   sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0019-Huion__Kamvas-Pro-19.bpf.o
+   sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0010-Huion__KeydialK20.bpf.o
+   sudo install -D -t /usr/local/lib/firmware/hid/bpf /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/firmware/hid/bpf/0009-Huion__KeydialK20.bpf.o
+   sudo install -D -m 644 -t /etc/udev/rules.d /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/_inst/etc/udev/rules.d/81-hid-bpf.rules
+   sudo install -D -m 644 -t /etc/udev/rules.d /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/lib/udev/rules.d/81-hid-bpf.rules
+   sudo install -D -m 644 -t /etc/udev/hwdb.d /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/_inst/etc/udev/hwdb.d/81-hid-bpf-testing.hwdb
+   sudo install -D -t /usr/local/bin/ /home/user/Downloads/udev-hid-bpf_2.1.0-20240704-106-gc9dbf3273ad8/bin/udev-hid-bpf
+   sudo udevadm control --reload
+   sudo systemd-hwdb update
+
+.. note:: The glob **must** be quoted so it is passed as-is to the ``install.sh`` script.
+          Without quotes the shell will try to expand the glob before passing it on.
 
 And if you're happy with the list of files then run the script:
 
@@ -87,6 +104,21 @@ And if you're happy with the list of files then run the script:
            ├── 0019-XPPen__ArtistPro16Gen2.bpf.o
            ├── 0020-Huion__Kamvas-Pro-19.bpf.o
            └── 0020-XPPen__ArtistPro16Gen2.bpf.o
+
+Or with the quoted glob:
+
+.. code-block:: console
+
+   $ ./install.sh "*Huion*"
+   Using sudo to install files into /usr/local. You may be asked for your password now
+   $ tree /usr/local/lib/firmware
+   /usr/local/lib/firmware
+   └── hid
+       └── bpf
+           ├── 0010-Huion__KeydialK20.bpf.o
+           ├── 0019-Huion__Kamvas-Pro-19.bpf.o
+           ├── 0020-Huion__KeydialK20.bpf.o
+           └── 0020-Huion__Kamvas-Pro-19.bpf.o
 
 Once installed, replug the device and the new BPF should be loaded automatically. If the BPF loads
 correctly it will show up in ``/sys``:
@@ -123,10 +155,11 @@ Keep the directory around until testing is complete, you can uninstall it all wi
    $ ./uninstall.sh --dry-run
    ...
    $ ./uninstall.sh
+   ...
+   $ ./uninstall.sh "*Huion*"
 
-As above, using ``--dry-run`` first will list all files that are to be removed.
-If there are an files you want to keep, simply edit the ``uninstall.sh`` script
-accordingly.
+As above, using ``--dry-run`` first will list all files that are to be removed
+and the glob will limit the files that are uninstalled.
 
 
 Finding previous artifacts

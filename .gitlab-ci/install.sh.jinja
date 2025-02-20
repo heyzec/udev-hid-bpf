@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: install.sh [-v|--verbose] [--dry-run] [--list] [--udevdir /etc/] [--prefix $PREFIX]
+# Usage: install.sh [-v|--verbose] [--dry-run] [--list] [--udevdir /etc/] [--prefix $PREFIX] [GLOB]
 #
 # Description:
 #     Installs the BPF programs known to this script into the prefix and
@@ -11,6 +11,10 @@
 #
 #     To undo this script, run uninstall.sh with the same arguments.
 #
+# Arguments:
+#     GLOB       ... An optional shell glob to limit the number of BPF programs
+#                    to install. Note that this glob needs to be in quotes, e.g. "*XPPen*".
+#                    If omitted, all BPF programs in this tarball are installed.
 # Options:
 #     --verbose  ... print debug output
 #     --dry-run  ... only print commands, do not install
@@ -69,9 +73,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+GLOB=""
+
 if [ $# -gt 0 ]; then
-  usage
-  exit 1
+  if [ $# -gt 1 ]; then
+    usage
+    exit 1
+  fi
+  GLOB=$1
+  shift
 fi
 
 set -e
@@ -100,10 +110,11 @@ find ./ \
 
 echo "Using sudo to install files into $PREFIX. You may be asked for your password now"
 dryrun_sudo="$DRY_RUN sudo"
-# Any of the following lines can be safely commented out or removed
-# to avoid installing a particular file
 {% for bpf in bpfs %}
-$dryrun_sudo install -D -t "$PREFIX/{{bpf.dir}}" "$SCRIPT_DIR/{{bpf.path}}"
+# shellcheck disable=SC2053
+if [[ -z "$GLOB" || "{{bpf.filename}}" = $GLOB ]]; then
+  $dryrun_sudo install -D -t "$PREFIX/{{bpf.dir}}" "$SCRIPT_DIR/{{bpf.path}}"
+fi
 {% endfor %}
 # The following lines are generic and should be left as-is
 {% for rule in udev_rules %}
