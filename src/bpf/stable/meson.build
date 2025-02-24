@@ -8,7 +8,6 @@ tracing_sources = [
     '0010-HP__Elite-Presenter.bpf.c',
     '0010-Huion__Dial-2.bpf.c',
     '0010-Huion__Inspiroy-2-S.bpf.c',
-    '0010-Huion__Kamvas-Pro-19.bpf.c',
     '0010-IOGEAR__Kaliber-MMOmentum.bpf.c',
     '0010-Microsoft__Xbox-Elite-2.bpf.c',
     '0010-Mistel__MD770.bpf.c',
@@ -18,6 +17,7 @@ tracing_sources = [
     '0010-XPPen__Artist24.bpf.c',
     '0010-XPPen__ArtistPro16Gen2.bpf.c',
     '0010-XPPen__DecoMini4.bpf.c',
+    '0020-Huion__Kamvas-Pro-19.bpf.c',
 ]
 
 # 'sources' are BPF programs only compatible with
