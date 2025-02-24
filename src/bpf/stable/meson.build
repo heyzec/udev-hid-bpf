@@ -25,6 +25,7 @@ tracing_sources = [
 # 'sources' are BPF programs only compatible with
 # struct_ops (kernel v6.11+)
 sources = [
+    '0010-XPPen__ACK05.bpf.c',
 ]
 
 foreach bpf: tracing_sources
