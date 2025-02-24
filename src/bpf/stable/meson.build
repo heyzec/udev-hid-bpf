@@ -17,9 +17,9 @@ tracing_sources = [
     '0010-Thrustmaster__TCA-Yoke-Boeing.bpf.c',
     '0010-Wacom__ArtPen.bpf.c',
     '0010-XPPen__Artist24.bpf.c',
-    '0010-XPPen__ArtistPro16Gen2.bpf.c',
     '0010-XPPen__DecoMini4.bpf.c',
     '0020-Huion__Kamvas-Pro-19.bpf.c',
+    '0020-XPPen__ArtistPro16Gen2.bpf.c',
 ]
 
 # 'sources' are BPF programs only compatible with
