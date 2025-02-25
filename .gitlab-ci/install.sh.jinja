@@ -66,8 +66,8 @@ find ./ \
   -name "*.rules" \
   -exec \
     sed -i \
-    -e "/.*#MARKER/d" \
-    -e "s|^#\?\(.*\)\(@@BINDIR@@\)\(.*\)|#\1\2\3\n\1$PREFIX/bin\3 #MARKER|" \
+    -e "/.*#MARKER/,+1d" \
+    -e "s|^#\?\(.*\)\(@@BINDIR@@\)\(.*\)|#\1\2\3\n#MARKER\n\1$PREFIX/bin\3|" \
     {} \;
 
 
