@@ -98,6 +98,22 @@ resource_rules:
             [the freedesktop.org wiki](https://gitlab.freedesktop.org/freedesktop/freedesktop/-/wikis/home)
             on how to get permissions to fork a project and file a merge request.
           status: "close"
+      - name: "Suggest MR testing"
+        conditions:
+          labels:
+            - "bugbot::suggest-mr-testing"
+        actions:
+          remove_labels:
+            - "bugbot::suggest-mr-testing"
+          comment: |
+            A merge request was linked above that may have a fix for this issue.
+
+            Once the pipelines in the merge request are all green you can download a pre-compiled artifact that can be tested
+            on your system. This is the easiest way to test a MR so please give it a try and report back
+            with any findings.
+
+            Please see our documentation for [Installing BPFs from our CI](https://libevdev.pages.freedesktop.org/udev-hid-bpf/installing-from-ci.html)
+            for details and instructions. You can of course compile it yourself too.
       - *close_needinfo
       - *remind_needinfo
       - *help_needed
@@ -139,6 +155,20 @@ resource_rules:
 
             Please see [libinput's docs for submitting code](https://wayland.freedesktop.org/libinput/doc/latest/contributing.html#submitting-code)
             that explain how to amend and force-push to this repo. These docs work well for udev-hid-bpf as well.
+      - name: "Suggest MR testing"
+        conditions:
+          labels:
+            - "bugbot::suggest-mr-testing"
+        actions:
+          remove_labels:
+            - "bugbot::suggest-mr-testing"
+          comment: |
+            Once the pipelines above are all green you can download a pre-compiled artifact that can be tested
+            on your system. This is the easiest way to test a MR so please give it a try and report back
+            with any findings.
+
+            Please see our documentation for [Installing BPFs from our CI](https://libevdev.pages.freedesktop.org/udev-hid-bpf/installing-from-ci.html)
+            for details and instructions. You can of course compile it yourself too.
       - *close_needinfo
       - *remind_needinfo
       - *help_needed
