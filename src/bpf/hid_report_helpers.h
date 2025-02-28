@@ -2673,7 +2673,7 @@
 #define Usage_BS_iDeviceName                           Usage_i8(0x88)
 #define Usage_BS_iDeviceChemistry                      Usage_i8(0x89)
 #define Usage_BS_ManufacturerData                      Usage_i8(0x8a)
-#define Usage_BS_Rechargable                           Usage_i8(0x8b)
+#define Usage_BS_Rechargeable                          Usage_i8(0x8b)
 #define Usage_BS_WarningCapacityLimit                  Usage_i8(0x8c)
 #define Usage_BS_CapacityGranularity1                  Usage_i8(0x8d)
 #define Usage_BS_CapacityGranularity2                  Usage_i8(0x8e)
