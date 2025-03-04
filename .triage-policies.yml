@@ -77,6 +77,13 @@ resource_rules:
             Please **attach** (do not paste) the output of [`hid-recorder`](https://github.com/hidutils/hid-recorder/)
             for this device (run `sudo hid-recorder` without argument and it will let you pick the device).
             This should show the data the kernel receives from the device and may provide a hint on what's going on here.
+
+            Please provide separate short recordings for each logical group of events (e.g. one recording for buttons,
+            one for motion data, etc.) and describe in the comment what the recording captured. We can only see the
+            data the device provides, we do not know in which sequence you pressed the buttons (or which buttons you
+            pressed), whether you physically moved left-to-right. Aim to keep the recording as short as possible,
+            in particular tablet stylus data can produce thousands of events very quickly, making triage and debugging
+            harder and/or impossible.
       - name: "Expect a merge request"
         conditions:
           labels:
