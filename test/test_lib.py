@@ -9,6 +9,8 @@ import logging
 import struct
 import pytest
 
+from dataclasses import dataclass
+
 logger = logging.getLogger(__name__)
 
 
@@ -226,3 +228,94 @@ class TestXPPenACK05:
 
         assert output_report.data == expected_output_data
         assert output_report.time == 10
+
+
+@pytest.mark.parametrize("source", ["0020-Huion__Inspiroy-2-S"])
+class TestHuionInspiroy2S:
+    @pytest.mark.parametrize("down_on_button", [True, False])
+    @pytest.mark.parametrize("up_event_count", [1, 2, 3, 4])
+    def test_eraser_tip_changes(self, bpf, down_on_button, up_event_count):
+        @dataclass
+        class Report:
+            tip_switch: bool
+            secondary_barrel_switch: bool
+            in_range: bool = True
+
+            def __bytes__(self) -> bytes:
+                id = 0x8
+                b1 = 0x0
+                if self.in_range:
+                    b1 |= 0x80
+                if self.tip_switch:
+                    b1 |= 0x1
+                if self.secondary_barrel_switch:
+                    b1 |= 0x4
+
+                # For this test x/y values and pressure don't matter
+                return bytes(
+                    [id, b1, 0x59, 0x44, 0x47, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+                )
+
+            @classmethod
+            def from_bytes(cls, bs: bytes) -> "Report":
+                assert bs[0] == 0x8  # Report ID
+                return cls(
+                    tip_switch=(bs[1] & 0x1) != 0,
+                    secondary_barrel_switch=(bs[1] & 0x4) != 0,
+                    in_range=(bs[1] & 0x80) != 0,
+                )
+
+        # A "random" number of events after our button toggles
+        filler_event_count = 10
+
+        reports = [
+            Report(tip_switch=False, secondary_barrel_switch=False),
+            Report(tip_switch=True, secondary_barrel_switch=False),
+            # Legitimate tip up/down
+            Report(tip_switch=False, secondary_barrel_switch=False),
+            Report(tip_switch=True, secondary_barrel_switch=False),
+            # Press button
+            Report(tip_switch=down_on_button, secondary_barrel_switch=True),
+            *[Report(tip_switch=False, secondary_barrel_switch=True)] * up_event_count,
+            *[Report(tip_switch=True, secondary_barrel_switch=True)] * filler_event_count,
+            # Legitimate tip up/down
+            Report(tip_switch=False, secondary_barrel_switch=True),
+            Report(tip_switch=True, secondary_barrel_switch=True),
+            *[Report(tip_switch=True, secondary_barrel_switch=True)] * filler_event_count,
+            # Legitimate tip up/down
+            # Release button
+            Report(tip_switch=down_on_button, secondary_barrel_switch=False),
+            *[Report(tip_switch=False, secondary_barrel_switch=False)] * up_event_count,
+            *[Report(tip_switch=True, secondary_barrel_switch=False)] * filler_event_count,
+            # Legitimate tip up event + prox-out
+            Report(tip_switch=False, secondary_barrel_switch=False),
+            Report(tip_switch=False, secondary_barrel_switch=False, in_range=False),
+        ]  # fmt: skip
+
+        expected = [
+            Report(tip_switch=False, secondary_barrel_switch=False),
+            Report(tip_switch=True, secondary_barrel_switch=False),
+            # Legitimate tip up/down
+            Report(tip_switch=False, secondary_barrel_switch=False),
+            Report(tip_switch=True, secondary_barrel_switch=False),
+            # Press button
+            Report(tip_switch=True, secondary_barrel_switch=True),
+            *[Report(tip_switch=True, secondary_barrel_switch=True)] * up_event_count,
+            *[Report(tip_switch=True, secondary_barrel_switch=True)] * filler_event_count,
+            # Legitimate tip up/down
+            Report(tip_switch=False, secondary_barrel_switch=True),
+            Report(tip_switch=True, secondary_barrel_switch=True),
+            *[Report(tip_switch=True, secondary_barrel_switch=True)] * filler_event_count,
+            # Release button
+            Report(tip_switch=True, secondary_barrel_switch=False),
+            *[Report(tip_switch=True, secondary_barrel_switch=False)] * up_event_count,
+            *[Report(tip_switch=True, secondary_barrel_switch=False)] * filler_event_count,
+            # Legitimate tip up event + prox-out
+            Report(tip_switch=False, secondary_barrel_switch=False),
+            Report(tip_switch=False, secondary_barrel_switch=False, in_range=False),
+        ]  # fmt: skip
+
+        events = [bpf.hid_bpf_device_event(report=bytes(report)) for report in reports]
+        events = [Report.from_bytes(e) for e in events]
+
+        assert events == expected
