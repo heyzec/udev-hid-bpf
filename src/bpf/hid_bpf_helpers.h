@@ -70,7 +70,7 @@ static inline void hid_bpf_printk_event(struct hid_bpf_ctx *hctx)
 			return; /* EPERM check */
 
 		bpf_for(i, 0, PRINTK_PACKET_SIZE) {
-			if (i + offset < hctx->size) {
+			if (i + offset < (unsigned int)hctx->size) {
 				BPF_SNPRINTF(__printk_str + i * 3, 4,
 					     "%02x ",
 					     data[i]

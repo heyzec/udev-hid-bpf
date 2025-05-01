@@ -57,7 +57,7 @@ static __u8 disable_smart_shift[] = {
 
 
 static int check_usb_report_descriptor(struct hid_bpf_probe_args *ctx) {
-	const int offset = 27;
+	const size_t offset = 27;
 
 	if (ctx->rdesc_size > (offset + 9) &&
 	    ctx->rdesc[offset + 0] == 0x06 &&  /* Usage Page */
@@ -74,7 +74,7 @@ static int check_usb_report_descriptor(struct hid_bpf_probe_args *ctx) {
 }
 
 static int check_bluetooth_report_descriptor(struct hid_bpf_probe_args *ctx) {
-	const int offset = 69;
+	const size_t offset = 69;
 
 	if (ctx->rdesc_size > (offset + 10) &&
 	    ctx->rdesc[offset + 0] == 0x06 &&  /* Usage Page */

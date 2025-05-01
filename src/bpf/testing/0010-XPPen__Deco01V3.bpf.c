@@ -257,7 +257,7 @@ int BPF_PROG(xppen_deco01v3_device_event, struct hid_bpf_ctx *hctx)
 
 	if (data[0] == PAD_REPORT_ID) {
 		__u8 button_mask = 0;
-		int d, b;
+		size_t d, b;
 
 		/* data[1] stores the status of BTN_2 in the 3rd bit*/
 		if (data[1] & BIT(2))

@@ -45,7 +45,7 @@ int BPF_PROG(hid_fix_rdesc, struct hid_bpf_ctx *hctx)
 	 */
 	const u8 offsets[] = {32, 36, 49, 53};
 
-	for (int idx = 0; idx < ARRAY_SIZE(offsets); idx++) {
+	for (size_t idx = 0; idx < ARRAY_SIZE(offsets); idx++) {
 		u8 offset = offsets[idx];
 
 		/* if Input (Data,Var,Rel) , make it Input (Data,Var,Abs) */
