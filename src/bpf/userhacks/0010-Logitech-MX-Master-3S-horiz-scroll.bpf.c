@@ -47,7 +47,7 @@ int BPF_PROG(master_3s_fix_event, struct hid_bpf_ctx *hid_ctx)
 	if (!data || data->report_id != expected_report_id)
 		return 0; /* EPERM check */
 
-#if false
+#if 0
 	bpf_printk(" ** HID Report:");
 	bpf_printk("    buttons: %04x", data->buttons);
 	bpf_printk("    x: %i", data->x);
