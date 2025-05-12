@@ -1,5 +1,6 @@
 project('udev-hid-bpf', 'rust', 'c',
         version: '2.1.0-20240704', # Update Cargo.toml too!
+        default_options : [ 'c_std=gnu99', 'warning_level=2' ],
         meson_version: '>= 1.0.0')
 
 prefix = get_option('prefix')
@@ -50,6 +51,22 @@ else
     warning(f'C compiler is @cc_id@ but BPF compiler is @bpf_compiler@')
 endif
 
+cflags = [
+	'-Wno-unused-parameter',
+	'-Wno-missing-field-initializers',
+	'-Wno-missing-declarations',
+
+	'-Wundef',
+	'-Wlogical-op',
+	'-Wpointer-arith',
+	'-Wuninitialized',
+	'-Winit-self',
+	'-Wimplicit-fallthrough',
+	'-Wredundant-decls',
+	'-Wincompatible-pointer-types',
+	'-Wformat=2',
+]
+add_project_arguments(cc.get_supported_arguments(cflags), language : 'c')
 
 use_bpf_tracing = get_option('bpf-tracing')
 
