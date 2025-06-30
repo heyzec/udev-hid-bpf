@@ -188,20 +188,20 @@ fn cmd_add(
 
     for syspath in devices {
         let dev = hidudev::HidUdev::from_syspath(syspath)?;
-        if !dev.is_ignored() {
-            if objfiles.is_empty() {
+        if objfiles.is_empty() {
+            if !dev.is_ignored() {
                 let objfiles = dev.search_for_matching_objfiles(&target_bpf_dirs);
                 dev.load_bpf_files(&objfiles, properties)?;
             } else {
-                let bpf_files = hidudev::HidUdev::find_named_objfiles(&objfiles, &target_bpf_dirs);
-                if bpf_files.is_empty() {
-                    log::warn!("Unable to find any BPF programs for: {:?}", objfiles);
-                } else {
-                    dev.load_bpf_files(&bpf_files, properties)?;
-                }
+                log::warn!("Device {syspath:?} has HID_BPF_IGNORE_DEVICE set, skipping");
             }
         } else {
-            log::warn!("Device {syspath:?} has HID_BPF_IGNORE_DEVICE set, skipping");
+            let bpf_files = hidudev::HidUdev::find_named_objfiles(&objfiles, &target_bpf_dirs);
+            if bpf_files.is_empty() {
+                log::warn!("Unable to find any BPF programs for: {:?}", objfiles);
+            } else {
+                dev.load_bpf_files(&bpf_files, properties)?;
+            }
         }
     }
 
