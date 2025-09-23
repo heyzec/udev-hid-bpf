@@ -16,6 +16,7 @@ tracing_sources = [
 # 'sources' are BPF programs only compatible with
 # struct_ops (kernel v6.11+)
 sources = [
+    '0011-Synaptics__DLL0945.bpf.c',
 ]
 
 foreach bpf: tracing_sources
