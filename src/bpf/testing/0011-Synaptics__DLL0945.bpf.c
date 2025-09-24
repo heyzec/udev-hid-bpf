@@ -75,7 +75,8 @@
 #include <linux/errno.h>
 
 #define VID_SYNAPTICS		0x06CB
-#define PID_DLL0945		0xCE26
+#define PID_DLL0945_9310	0xCDE6
+#define PID_DLL0945_5406	0xCE26
 
 /* Report ID for touch events */
 #define TOUCH_REPORT_ID		3
@@ -239,7 +240,8 @@ int probe(struct hid_bpf_probe_args *ctx)
 }
 
 HID_BPF_CONFIG(
-	HID_DEVICE(BUS_I2C, HID_GROUP_MULTITOUCH_WIN_8, VID_SYNAPTICS, PID_DLL0945),
+	HID_DEVICE(BUS_I2C, HID_GROUP_MULTITOUCH_WIN_8, VID_SYNAPTICS, PID_DLL0945_9310),
+	HID_DEVICE(BUS_I2C, HID_GROUP_MULTITOUCH_WIN_8, VID_SYNAPTICS, PID_DLL0945_5406),
 );
 
 char _license[] SEC("license") = "GPL";
