@@ -17,6 +17,7 @@ tracing_sources = [
 # struct_ops (kernel v6.11+)
 sources = [
     '0011-Synaptics__DLL0945.bpf.c',
+    '0010-Dell__DELL0A78.bpf.c',
 ]
 
 foreach bpf: tracing_sources
